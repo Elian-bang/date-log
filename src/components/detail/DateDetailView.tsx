@@ -166,16 +166,29 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     0
   );
 
-  // Collect all places from all regions and categories
+  // Collect all places from all regions and categories with category info
   const allPlaces = useMemo(() => {
-    const places: (Place | Restaurant)[] = [];
+    if (!dateLog || !dateLog.regions) {
+      return [];
+    }
+
+    const places: Array<(Place | Restaurant) & { category: CategoryType }> = [];
     dateLog.regions.forEach((region) => {
-      places.push(...region.categories.cafe);
-      places.push(...region.categories.restaurant);
-      places.push(...region.categories.spot);
+      // Add cafes with category
+      region.categories.cafe.forEach((cafe) => {
+        places.push({ ...cafe, category: 'cafe' as CategoryType });
+      });
+      // Add restaurants with category
+      region.categories.restaurant.forEach((restaurant) => {
+        places.push({ ...restaurant, category: 'restaurant' as CategoryType });
+      });
+      // Add spots with category
+      region.categories.spot.forEach((spot) => {
+        places.push({ ...spot, category: 'spot' as CategoryType });
+      });
     });
     return places;
-  }, [dateLog.regions]);
+  }, [dateLog]);
 
   // Calculate map center from places with coordinates
   const mapCenter = useMemo(() => {
