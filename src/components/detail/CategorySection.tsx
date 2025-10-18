@@ -28,6 +28,18 @@ export const CategorySection = ({
   const [selectedType, setSelectedType] = useState<RestaurantType>('전체');
   const config = CATEGORY_CONFIG[category];
 
+  // Get available restaurant types (types that have at least one restaurant)
+  const availableTypes: RestaurantType[] =
+    category === 'restaurant'
+      ? [
+          '전체',
+          ...RESTAURANT_TYPES.filter((type) => {
+            if (type === '전체') return false;
+            return (places as Restaurant[]).some((p) => p.type === type);
+          }),
+        ]
+      : [];
+
   // Filter restaurants by type
   const filteredPlaces =
     category === 'restaurant'
@@ -58,9 +70,9 @@ export const CategorySection = ({
       </div>
 
       {/* Restaurant Type Tabs */}
-      {category === 'restaurant' && (
+      {category === 'restaurant' && availableTypes.length > 0 && (
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-          {RESTAURANT_TYPES.map((type) => (
+          {availableTypes.map((type) => (
             <button
               key={type}
               onClick={() => setSelectedType(type)}
