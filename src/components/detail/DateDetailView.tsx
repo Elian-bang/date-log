@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiArrowLeft, FiPlus } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus, FiMap } from 'react-icons/fi';
 import { useDateLog } from '@/hooks/useDateLog';
 import { formatDateForDisplay } from '@/utils/dateUtils';
 import { CategoryType, PlaceFormData, Place, Restaurant } from '@/types';
 import { RegionSection } from './RegionSection';
 import { PlaceFormModal } from '../forms/PlaceFormModal';
+import { MapView } from '../map/MapView';
 
 interface DateDetailViewProps {
   onBackToCalendar?: () => void;
@@ -41,6 +42,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     placeId: string;
   } | null>(null);
   const [deleteRegionConfirm, setDeleteRegionConfirm] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   if (loading) {
     return (
@@ -164,6 +166,39 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     0
   );
 
+  // Collect all places from all regions and categories
+  const allPlaces = useMemo(() => {
+    const places: (Place | Restaurant)[] = [];
+    dateLog.regions.forEach((region) => {
+      places.push(...region.categories.cafe);
+      places.push(...region.categories.restaurant);
+      places.push(...region.categories.spot);
+    });
+    return places;
+  }, [dateLog.regions]);
+
+  // Calculate map center from places with coordinates
+  const mapCenter = useMemo(() => {
+    const placesWithCoords = allPlaces.filter(
+      (place) => place.coordinates && place.coordinates.lat && place.coordinates.lng
+    );
+
+    if (placesWithCoords.length === 0) {
+      // Default to Seoul City Hall if no coordinates
+      return { lat: 37.5665, lng: 126.978 };
+    }
+
+    // Calculate average position
+    const avgLat =
+      placesWithCoords.reduce((sum, place) => sum + place.coordinates!.lat, 0) /
+      placesWithCoords.length;
+    const avgLng =
+      placesWithCoords.reduce((sum, place) => sum + place.coordinates!.lng, 0) /
+      placesWithCoords.length;
+
+    return { lat: avgLat, lng: avgLng };
+  }, [allPlaces]);
+
   return (
     <div className="bg-gray-50">
       {/* Header */}
@@ -187,20 +222,42 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
               </p>
             </div>
 
-            <button
-              onClick={() => setIsAddRegionOpen(true)}
-              className="flex items-center gap-1 px-3 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm min-h-[44px]"
-            >
-              <FiPlus className="w-4 h-4" />
-              <span className="hidden sm:inline">지역 추가</span>
-              <span className="sm:hidden">추가</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowMap(!showMap)}
+                className={`flex items-center gap-1 px-3 py-2.5 rounded-lg transition-colors text-sm min-h-[44px] ${
+                  showMap
+                    ? 'bg-primary text-white hover:bg-primary-dark'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <FiMap className="w-4 h-4" />
+                <span className="hidden sm:inline">지도</span>
+              </button>
+              <button
+                onClick={() => setIsAddRegionOpen(true)}
+                className="flex items-center gap-1 px-3 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm min-h-[44px]"
+              >
+                <FiPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">지역 추가</span>
+                <span className="sm:hidden">추가</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        {/* Map Section */}
+        {showMap && (
+          <div className="mb-6 bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="h-[400px] sm:h-[500px]">
+              <MapView places={allPlaces} center={mapCenter} />
+            </div>
+          </div>
+        )}
+
         {/* Regions */}
         {dateLog.regions.map((region) => (
           <RegionSection
