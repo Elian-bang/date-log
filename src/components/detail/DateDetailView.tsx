@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { FiArrowLeft, FiPlus } from 'react-icons/fi';
 import { useDateLog } from '@/hooks/useDateLog';
 import { formatDateForDisplay } from '@/utils/dateUtils';
@@ -7,13 +7,16 @@ import { CategoryType, PlaceFormData, Place, Restaurant } from '@/types';
 import { RegionSection } from './RegionSection';
 import { PlaceFormModal } from '../forms/PlaceFormModal';
 
+interface DateDetailViewProps {
+  onBackToCalendar?: () => void;
+}
+
 /**
  * Date Detail View Component
  * Displays date details with multi-region support and place management
  */
-export const DateDetailView = () => {
+export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
   const { dateId } = useParams<{ dateId: string }>();
-  const navigate = useNavigate();
   const {
     getDateLog,
     addRegion,
@@ -65,7 +68,7 @@ export const DateDetailView = () => {
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
         <div className="text-lg text-gray-600 mb-4">No data for this date</div>
         <button
-          onClick={() => navigate('/')}
+          onClick={onBackToCalendar || (() => window.history.back())}
           className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
         >
           <FiArrowLeft />
@@ -168,7 +171,7 @@ export const DateDetailView = () => {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button
-              onClick={() => navigate('/')}
+              onClick={onBackToCalendar || (() => window.history.back())}
               className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors"
             >
               <FiArrowLeft className="w-5 h-5" />

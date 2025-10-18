@@ -7,6 +7,56 @@ import { STORAGE_KEY, DEFAULT_DATA_PATH } from './constants';
  */
 
 /**
+ * Generate unique ID for migration
+ */
+const generateId = (): string => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
+/**
+ * Migrate old data format (single region) to new format (multiple regions)
+ * Old format: { date, region: string, categories }
+ * New format: { date, regions: RegionSection[] }
+ */
+const migrateData = (data: any): DateLogData => {
+  const migratedData: DateLogData = {};
+  let migrationOccurred = false;
+
+  Object.keys(data).forEach((dateKey) => {
+    const dateEntry = data[dateKey];
+
+    // Check if old format (has 'region' string instead of 'regions' array)
+    if (dateEntry.region && !dateEntry.regions) {
+      migrationOccurred = true;
+      console.log(`Migrating old format data for date: ${dateKey}`);
+      migratedData[dateKey] = {
+        date: dateEntry.date,
+        regions: [
+          {
+            id: generateId(),
+            name: dateEntry.region,
+            categories: dateEntry.categories || {
+              cafe: [],
+              restaurant: [],
+              spot: [],
+            },
+          },
+        ],
+      };
+    } else {
+      // Already in new format
+      migratedData[dateKey] = dateEntry;
+    }
+  });
+
+  if (migrationOccurred) {
+    console.log('Data migration completed successfully');
+  }
+
+  return migratedData;
+};
+
+/**
  * Load initial data from localStorage or JSON file
  * Priority: localStorage > JSON file
  */
@@ -17,7 +67,12 @@ export const loadInitialData = async (): Promise<DateLogData> => {
 
     if (stored) {
       console.log('Loading data from localStorage');
-      return JSON.parse(stored);
+      const data = JSON.parse(stored);
+      const migratedData = migrateData(data);
+
+      // Save migrated data back to localStorage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedData));
+      return migratedData;
     }
 
     // If no localStorage data, fetch from JSON file
@@ -29,11 +84,12 @@ export const loadInitialData = async (): Promise<DateLogData> => {
     }
 
     const data: DateLogData = await response.json();
+    const migratedData = migrateData(data);
 
     // Save to localStorage for future use
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedData));
 
-    return data;
+    return migratedData;
   } catch (error) {
     console.error('Error loading initial data:', error);
     // Return empty data structure on error

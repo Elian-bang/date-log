@@ -1,19 +1,19 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { CalendarView } from '@/components/calendar/CalendarView';
-import { DateDetailView } from '@/components/detail/DateDetailView';
+import { MainView } from '@/components/MainView';
 
 /**
  * Application Routes
+ * Uses unified MainView with smooth scroll transitions
  */
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <CalendarView />,
+    element: <MainView />,
   },
   {
     path: '/date/:dateId',
-    element: <DateDetailView />,
+    element: <MainView />,
   },
   {
     path: '*',
