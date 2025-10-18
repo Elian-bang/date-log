@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run build)",
+      "Bash(git add .)",
+      "Bash(git commit -m \"Improvement: Multi-region support - one date can now have multiple regions with their own places\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiEdit2, FiCheck } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus } from 'react-icons/fi';
 import { useDateLog } from '@/hooks/useDateLog';
 import { formatDateForDisplay } from '@/utils/dateUtils';
 import { CategoryType, PlaceFormData, Place, Restaurant } from '@/types';
-import { CategorySection } from './CategorySection';
+import { RegionSection } from './RegionSection';
 import { PlaceFormModal } from '../forms/PlaceFormModal';
 
 /**
  * Date Detail View Component
- * Displays date details with place management
+ * Displays date details with multi-region support and place management
  */
 export const DateDetailView = () => {
   const { dateId } = useParams<{ dateId: string }>();
   const navigate = useNavigate();
   const {
     getDateLog,
-    updateRegion,
+    addRegion,
+    updateRegionName,
+    deleteRegion,
     addPlace,
     updatePlace,
     deletePlace,
@@ -24,15 +26,18 @@ export const DateDetailView = () => {
     loading,
   } = useDateLog();
 
-  const [isEditingRegion, setIsEditingRegion] = useState(false);
-  const [regionInput, setRegionInput] = useState('');
   const [isPlaceFormOpen, setIsPlaceFormOpen] = useState(false);
+  const [currentRegionId, setCurrentRegionId] = useState<string>('');
   const [currentCategory, setCurrentCategory] = useState<CategoryType>('cafe');
   const [editingPlace, setEditingPlace] = useState<Place | Restaurant | null>(null);
+  const [isAddRegionOpen, setIsAddRegionOpen] = useState(false);
+  const [newRegionName, setNewRegionName] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<{
+    regionId: string;
     category: CategoryType;
     placeId: string;
   } | null>(null);
+  const [deleteRegionConfirm, setDeleteRegionConfirm] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -70,47 +75,34 @@ export const DateDetailView = () => {
     );
   }
 
-  // Region edit handlers
-  const handleStartEditRegion = () => {
-    setRegionInput(dateLog.region);
-    setIsEditingRegion(true);
-  };
-
-  const handleSaveRegion = () => {
-    if (regionInput.trim()) {
-      updateRegion(dateId, regionInput.trim());
-      setIsEditingRegion(false);
-    }
-  };
-
-  const handleCancelEditRegion = () => {
-    setIsEditingRegion(false);
-    setRegionInput('');
-  };
-
   // Place CRUD handlers
-  const handleAddPlace = (category: CategoryType) => {
+  const handleAddPlace = (regionId: string, category: CategoryType) => {
+    setCurrentRegionId(regionId);
     setCurrentCategory(category);
     setEditingPlace(null);
     setIsPlaceFormOpen(true);
   };
 
-  const handleEditPlace = (category: CategoryType, placeId: string) => {
-    const place = dateLog.categories[category].find((p) => p.id === placeId);
+  const handleEditPlace = (regionId: string, category: CategoryType, placeId: string) => {
+    const region = dateLog.regions.find((r) => r.id === regionId);
+    if (!region) return;
+
+    const place = region.categories[category].find((p) => p.id === placeId);
     if (place) {
+      setCurrentRegionId(regionId);
       setCurrentCategory(category);
       setEditingPlace(place);
       setIsPlaceFormOpen(true);
     }
   };
 
-  const handleDeletePlace = (category: CategoryType, placeId: string) => {
-    setDeleteConfirm({ category, placeId });
+  const handleDeletePlace = (regionId: string, category: CategoryType, placeId: string) => {
+    setDeleteConfirm({ regionId, category, placeId });
   };
 
-  const confirmDelete = () => {
+  const confirmDeletePlace = () => {
     if (deleteConfirm) {
-      deletePlace(dateId, deleteConfirm.category, deleteConfirm.placeId);
+      deletePlace(dateId, deleteConfirm.regionId, deleteConfirm.category, deleteConfirm.placeId);
       setDeleteConfirm(null);
     }
   };
@@ -118,7 +110,7 @@ export const DateDetailView = () => {
   const handlePlaceFormSubmit = (data: PlaceFormData) => {
     if (editingPlace) {
       // Update existing place
-      updatePlace(dateId, currentCategory, editingPlace.id, {
+      updatePlace(dateId, currentRegionId, currentCategory, editingPlace.id, {
         name: data.name,
         memo: data.memo,
         image: data.image,
@@ -127,7 +119,7 @@ export const DateDetailView = () => {
       });
     } else {
       // Add new place
-      addPlace(dateId, currentCategory, {
+      addPlace(dateId, currentRegionId, currentCategory, {
         name: data.name,
         memo: data.memo,
         image: data.image,
@@ -137,6 +129,37 @@ export const DateDetailView = () => {
       });
     }
   };
+
+  // Region management handlers
+  const handleAddRegion = () => {
+    if (newRegionName.trim()) {
+      addRegion(dateId, newRegionName.trim());
+      setNewRegionName('');
+      setIsAddRegionOpen(false);
+    }
+  };
+
+  const handleDeleteRegion = (regionId: string) => {
+    setDeleteRegionConfirm(regionId);
+  };
+
+  const confirmDeleteRegion = () => {
+    if (deleteRegionConfirm) {
+      deleteRegion(dateId, deleteRegionConfirm);
+      setDeleteRegionConfirm(null);
+    }
+  };
+
+  // Calculate total regions and places
+  const totalRegions = dateLog.regions.length;
+  const totalPlaces = dateLog.regions.reduce(
+    (sum, region) =>
+      sum +
+      region.categories.cafe.length +
+      region.categories.restaurant.length +
+      region.categories.spot.length,
+    0
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -152,90 +175,60 @@ export const DateDetailView = () => {
               <span className="font-medium">Calendar</span>
             </button>
 
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-gray-800">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-800">
                 {formatDateForDisplay(dateLog.date)}
               </h1>
-
-              {/* Region Editor */}
-              <div className="flex items-center gap-2">
-                {isEditingRegion ? (
-                  <>
-                    <input
-                      type="text"
-                      value={regionInput}
-                      onChange={(e) => setRegionInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSaveRegion()}
-                      className="px-3 py-1 border border-primary rounded-lg text-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="동네"
-                      autoFocus
-                    />
-                    <button
-                      onClick={handleSaveRegion}
-                      className="p-1 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                      aria-label="Save region"
-                    >
-                      <FiCheck className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={handleCancelEditRegion}
-                      className="p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      aria-label="Cancel"
-                    >
-                      ✕
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-lg text-gray-600">{dateLog.region}</span>
-                    <button
-                      onClick={handleStartEditRegion}
-                      className="p-1 text-gray-400 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors"
-                      aria-label="Edit region"
-                    >
-                      <FiEdit2 className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                {totalRegions}개 지역 · {totalPlaces}개 장소
+              </p>
             </div>
 
-            <div className="w-20" /> {/* Spacer for alignment */}
+            <button
+              onClick={() => setIsAddRegionOpen(true)}
+              className="flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm"
+            >
+              <FiPlus className="w-4 h-4" />
+              <span>지역 추가</span>
+            </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6">
-        {/* Cafe Section */}
-        <CategorySection
-          category="cafe"
-          places={dateLog.categories.cafe}
-          onAddPlace={() => handleAddPlace('cafe')}
-          onToggleVisited={(placeId) => toggleVisited(dateId, 'cafe', placeId)}
-          onEditPlace={(placeId) => handleEditPlace('cafe', placeId)}
-          onDeletePlace={(placeId) => handleDeletePlace('cafe', placeId)}
-        />
+        {/* Regions */}
+        {dateLog.regions.map((region) => (
+          <RegionSection
+            key={region.id}
+            dateId={dateId}
+            region={region}
+            onUpdateRegionName={(newName) => updateRegionName(dateId, region.id, newName)}
+            onDeleteRegion={() => handleDeleteRegion(region.id)}
+            onAddPlace={(category) => handleAddPlace(region.id, category)}
+            onToggleVisited={(category, placeId) =>
+              toggleVisited(dateId, region.id, category, placeId)
+            }
+            onEditPlace={(category, placeId) => handleEditPlace(region.id, category, placeId)}
+            onDeletePlace={(category, placeId) =>
+              handleDeletePlace(region.id, category, placeId)
+            }
+            showDelete={totalRegions > 1}
+          />
+        ))}
 
-        {/* Restaurant Section */}
-        <CategorySection
-          category="restaurant"
-          places={dateLog.categories.restaurant}
-          onAddPlace={() => handleAddPlace('restaurant')}
-          onToggleVisited={(placeId) => toggleVisited(dateId, 'restaurant', placeId)}
-          onEditPlace={(placeId) => handleEditPlace('restaurant', placeId)}
-          onDeletePlace={(placeId) => handleDeletePlace('restaurant', placeId)}
-        />
-
-        {/* Spot Section */}
-        <CategorySection
-          category="spot"
-          places={dateLog.categories.spot}
-          onAddPlace={() => handleAddPlace('spot')}
-          onToggleVisited={(placeId) => toggleVisited(dateId, 'spot', placeId)}
-          onEditPlace={(placeId) => handleEditPlace('spot', placeId)}
-          onDeletePlace={(placeId) => handleDeletePlace('spot', placeId)}
-        />
+        {/* Empty State */}
+        {dateLog.regions.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-lg shadow-md">
+            <p className="text-gray-500 mb-4">등록된 지역이 없습니다.</p>
+            <button
+              onClick={() => setIsAddRegionOpen(true)}
+              className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+            >
+              첫 번째 지역 추가하기
+            </button>
+          </div>
+        )}
       </main>
 
       {/* Place Form Modal */}
@@ -250,7 +243,43 @@ export const DateDetailView = () => {
         editingPlace={editingPlace}
       />
 
-      {/* Delete Confirmation Modal */}
+      {/* Add Region Modal */}
+      {isAddRegionOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">지역 추가</h3>
+            <input
+              type="text"
+              value={newRegionName}
+              onChange={(e) => setNewRegionName(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddRegion()}
+              placeholder="예: 삼송, 연신내, 홍대"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent mb-4"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setIsAddRegionOpen(false);
+                  setNewRegionName('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleAddRegion}
+                disabled={!newRegionName.trim()}
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                추가
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Place Confirmation */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
@@ -264,7 +293,32 @@ export const DateDetailView = () => {
                 취소
               </button>
               <button
-                onClick={confirmDelete}
+                onClick={confirmDeletePlace}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Region Confirmation */}
+      {deleteRegionConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">지역 삭제</h3>
+            <p className="text-gray-600 mb-2">이 지역과 포함된 모든 장소를 삭제하시겠습니까?</p>
+            <p className="text-sm text-red-600 mb-6">이 작업은 되돌릴 수 없습니다.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteRegionConfirm(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmDeleteRegion}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 삭제

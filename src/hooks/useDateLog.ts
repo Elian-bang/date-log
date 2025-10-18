@@ -3,8 +3,8 @@ import { DateLogData, DateLog, CategoryType, Place, Restaurant } from '@/types';
 import { loadInitialData, saveData, resetData } from '@/utils/dataSync';
 
 /**
- * Custom hook for managing date log data
- * Provides CRUD operations for dates and places
+ * Custom hook for managing date log data with multi-region support
+ * Provides CRUD operations for dates, regions, and places
  */
 
 interface UseDateLogReturn {
@@ -13,16 +13,20 @@ interface UseDateLogReturn {
   error: Error | null;
 
   // Date operations
-  addDate: (date: string, region: string) => void;
-  updateRegion: (date: string, region: string) => void;
+  addDate: (date: string, regionName: string) => void;
   deleteDate: (date: string) => void;
   getDateLog: (date: string) => DateLog | undefined;
 
+  // Region operations
+  addRegion: (date: string, regionName: string) => void;
+  updateRegionName: (date: string, regionId: string, newName: string) => void;
+  deleteRegion: (date: string, regionId: string) => void;
+
   // Place operations
-  addPlace: (date: string, category: CategoryType, place: Omit<Place, 'id'>) => void;
-  updatePlace: (date: string, category: CategoryType, placeId: string, updates: Partial<Place>) => void;
-  deletePlace: (date: string, category: CategoryType, placeId: string) => void;
-  toggleVisited: (date: string, category: CategoryType, placeId: string) => void;
+  addPlace: (date: string, regionId: string, category: CategoryType, place: Omit<Place, 'id'>) => void;
+  updatePlace: (date: string, regionId: string, category: CategoryType, placeId: string, updates: Partial<Place>) => void;
+  deletePlace: (date: string, regionId: string, category: CategoryType, placeId: string) => void;
+  toggleVisited: (date: string, regionId: string, category: CategoryType, placeId: string) => void;
 
   // Utility operations
   resetToDefault: () => Promise<void>;
@@ -60,39 +64,30 @@ export const useDateLog = (): UseDateLogReturn => {
     }
   }, [data, loading]);
 
-  // Generate unique ID for places
+  // Generate unique ID
   const generateId = (): string => {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
   // Date operations
-  const addDate = (date: string, region: string) => {
+  const addDate = (date: string, regionName: string) => {
     setData((prev) => ({
       ...prev,
       [date]: {
         date,
-        region,
-        categories: {
-          cafe: [],
-          restaurant: [],
-          spot: [],
-        },
+        regions: [
+          {
+            id: generateId(),
+            name: regionName,
+            categories: {
+              cafe: [],
+              restaurant: [],
+              spot: [],
+            },
+          },
+        ],
       },
     }));
-  };
-
-  const updateRegion = (date: string, region: string) => {
-    setData((prev) => {
-      if (!prev[date]) return prev;
-
-      return {
-        ...prev,
-        [date]: {
-          ...prev[date],
-          region,
-        },
-      };
-    });
   };
 
   const deleteDate = (date: string) => {
@@ -107,8 +102,69 @@ export const useDateLog = (): UseDateLogReturn => {
     return data[date];
   };
 
+  // Region operations
+  const addRegion = (date: string, regionName: string) => {
+    setData((prev) => {
+      if (!prev[date]) return prev;
+
+      return {
+        ...prev,
+        [date]: {
+          ...prev[date],
+          regions: [
+            ...prev[date].regions,
+            {
+              id: generateId(),
+              name: regionName,
+              categories: {
+                cafe: [],
+                restaurant: [],
+                spot: [],
+              },
+            },
+          ],
+        },
+      };
+    });
+  };
+
+  const updateRegionName = (date: string, regionId: string, newName: string) => {
+    setData((prev) => {
+      if (!prev[date]) return prev;
+
+      return {
+        ...prev,
+        [date]: {
+          ...prev[date],
+          regions: prev[date].regions.map((region) =>
+            region.id === regionId ? { ...region, name: newName } : region
+          ),
+        },
+      };
+    });
+  };
+
+  const deleteRegion = (date: string, regionId: string) => {
+    setData((prev) => {
+      if (!prev[date]) return prev;
+
+      return {
+        ...prev,
+        [date]: {
+          ...prev[date],
+          regions: prev[date].regions.filter((region) => region.id !== regionId),
+        },
+      };
+    });
+  };
+
   // Place operations
-  const addPlace = (date: string, category: CategoryType, place: Omit<Place, 'id'>) => {
+  const addPlace = (
+    date: string,
+    regionId: string,
+    category: CategoryType,
+    place: Omit<Place, 'id'>
+  ) => {
     setData((prev) => {
       if (!prev[date]) return prev;
 
@@ -121,71 +177,104 @@ export const useDateLog = (): UseDateLogReturn => {
         ...prev,
         [date]: {
           ...prev[date],
-          categories: {
-            ...prev[date].categories,
-            [category]: [...prev[date].categories[category], newPlace],
-          },
+          regions: prev[date].regions.map((region) =>
+            region.id === regionId
+              ? {
+                  ...region,
+                  categories: {
+                    ...region.categories,
+                    [category]: [...region.categories[category], newPlace],
+                  },
+                }
+              : region
+          ),
         },
       };
     });
   };
 
-  const updatePlace = (date: string, category: CategoryType, placeId: string, updates: Partial<Place>) => {
+  const updatePlace = (
+    date: string,
+    regionId: string,
+    category: CategoryType,
+    placeId: string,
+    updates: Partial<Place>
+  ) => {
     setData((prev) => {
       if (!prev[date]) return prev;
-
-      const updatedPlaces = prev[date].categories[category].map((place) =>
-        place.id === placeId ? { ...place, ...updates } : place
-      );
 
       return {
         ...prev,
         [date]: {
           ...prev[date],
-          categories: {
-            ...prev[date].categories,
-            [category]: updatedPlaces,
-          },
+          regions: prev[date].regions.map((region) =>
+            region.id === regionId
+              ? {
+                  ...region,
+                  categories: {
+                    ...region.categories,
+                    [category]: region.categories[category].map((place) =>
+                      place.id === placeId ? { ...place, ...updates } : place
+                    ),
+                  },
+                }
+              : region
+          ),
         },
       };
     });
   };
 
-  const deletePlace = (date: string, category: CategoryType, placeId: string) => {
+  const deletePlace = (date: string, regionId: string, category: CategoryType, placeId: string) => {
     setData((prev) => {
       if (!prev[date]) return prev;
-
-      const filteredPlaces = prev[date].categories[category].filter((place) => place.id !== placeId);
 
       return {
         ...prev,
         [date]: {
           ...prev[date],
-          categories: {
-            ...prev[date].categories,
-            [category]: filteredPlaces,
-          },
+          regions: prev[date].regions.map((region) =>
+            region.id === regionId
+              ? {
+                  ...region,
+                  categories: {
+                    ...region.categories,
+                    [category]: region.categories[category].filter((place) => place.id !== placeId),
+                  },
+                }
+              : region
+          ),
         },
       };
     });
   };
 
-  const toggleVisited = (date: string, category: CategoryType, placeId: string) => {
+  const toggleVisited = (
+    date: string,
+    regionId: string,
+    category: CategoryType,
+    placeId: string
+  ) => {
     setData((prev) => {
       if (!prev[date]) return prev;
-
-      const updatedPlaces = prev[date].categories[category].map((place) =>
-        place.id === placeId ? { ...place, visited: !place.visited } : place
-      );
 
       return {
         ...prev,
         [date]: {
           ...prev[date],
-          categories: {
-            ...prev[date].categories,
-            [category]: updatedPlaces,
-          },
+          regions: prev[date].regions.map((region) =>
+            region.id === regionId
+              ? {
+                  ...region,
+                  categories: {
+                    ...region.categories,
+                    [category]: region.categories[category].map((place) =>
+                      place.id === placeId ? { ...place, visited: !place.visited } : place
+                    ),
+                  },
+                }
+              : region
+          ),
         },
       };
     });
@@ -225,9 +314,11 @@ export const useDateLog = (): UseDateLogReturn => {
     loading,
     error,
     addDate,
-    updateRegion,
     deleteDate,
     getDateLog,
+    addRegion,
+    updateRegionName,
+    deleteRegion,
     addPlace,
     updatePlace,
     deletePlace,

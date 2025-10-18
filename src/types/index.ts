@@ -37,11 +37,17 @@ export interface Categories {
   spot: Spot[];
 }
 
-// Single date log entry
+// Region section with its own categories
+export interface RegionSection {
+  id: string;             // Unique ID for region section
+  name: string;           // Region name (e.g., "삼송", "연신내")
+  categories: Categories; // Places in this region
+}
+
+// Single date log entry (now supports multiple regions)
 export interface DateLog {
-  date: string;           // YYYY-MM-DD format
-  region: string;         // 동네명
-  categories: Categories;
+  date: string;                // YYYY-MM-DD format
+  regions: RegionSection[];    // Multiple regions per date
 }
 
 // Complete data structure (key: date string)
