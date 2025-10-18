@@ -72,7 +72,10 @@ export const MainView = () => {
   // Add new date handler
   const handleAddDate = (date: string, region: string) => {
     addDate(date, region);
-    navigate(`/date/${date}`);
+    // Wait for state update to complete before navigating
+    setTimeout(() => {
+      navigate(`/date/${date}`);
+    }, 0);
   };
 
   // Scroll to calendar section
