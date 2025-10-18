@@ -49,20 +49,20 @@ export const CategorySection = ({
       : places;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+    <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 mb-4 sm:mb-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-          <span className="text-2xl">{config.icon}</span>
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h2 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+          <span className="text-xl sm:text-2xl">{config.icon}</span>
           <span>{config.label}</span>
-          <span className="text-sm text-gray-500 font-normal">
+          <span className="text-xs sm:text-sm text-gray-500 font-normal">
             ({filteredPlaces.length})
           </span>
         </h2>
 
         <button
           onClick={onAddPlace}
-          className="flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm"
+          className="flex items-center gap-1 px-3 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm min-h-[44px]"
         >
           <FiPlus className="w-4 h-4" />
           <span>추가</span>
@@ -71,15 +71,15 @@ export const CategorySection = ({
 
       {/* Restaurant Type Tabs */}
       {category === 'restaurant' && availableTypes.length > 0 && (
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+        <div className="flex gap-2 mb-3 sm:mb-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin">
           {availableTypes.map((type) => (
             <button
               key={type}
               onClick={() => setSelectedType(type)}
-              className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${
+              className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-sm whitespace-nowrap transition-colors min-h-[44px] ${
                 selectedType === type
                   ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300'
               }`}
             >
               {type}
@@ -90,20 +90,21 @@ export const CategorySection = ({
 
       {/* Place Cards */}
       {filteredPlaces.length > 0 ? (
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin snap-x snap-mandatory">
           {filteredPlaces.map((place) => (
-            <PlaceCard
-              key={place.id}
-              place={place}
-              category={category}
-              onToggleVisited={() => onToggleVisited(place.id)}
-              onEdit={() => onEditPlace(place.id)}
-              onDelete={() => onDeletePlace(place.id)}
-            />
+            <div key={place.id} className="snap-start">
+              <PlaceCard
+                place={place}
+                category={category}
+                onToggleVisited={() => onToggleVisited(place.id)}
+                onEdit={() => onEditPlace(place.id)}
+                onDelete={() => onDeletePlace(place.id)}
+              />
+            </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-400">
+        <div className="text-center py-6 sm:py-8 text-gray-400">
           <p className="text-sm">
             {category === 'restaurant' && selectedType !== '전체'
               ? `${selectedType} 음식점이 없습니다.`

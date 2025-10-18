@@ -109,10 +109,10 @@ export const MainView = () => {
         </header>
 
         {/* Main Content */}
-        <main className="max-w-4xl mx-auto px-4 py-6">
+        <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
           {/* Stats */}
-          <div className="mb-6 text-center">
-            <p className="text-gray-600">
+          <div className="mb-4 sm:mb-6 text-center">
+            <p className="text-sm sm:text-base text-gray-600">
               총 <span className="font-bold text-primary">{Object.keys(data).length}</span>개의 데이트 기록
             </p>
           </div>
@@ -134,10 +134,10 @@ export const MainView = () => {
           {/* Add Date Button */}
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="fixed bottom-6 right-6 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary-dark transition-all hover:scale-110 flex items-center justify-center z-30"
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-primary text-white p-3 sm:p-4 rounded-full shadow-lg hover:bg-primary-dark transition-all hover:scale-110 active:scale-95 flex items-center justify-center z-30 min-w-[56px] min-h-[56px]"
             aria-label="Add new date"
           >
-            <FiPlus className="w-6 h-6" />
+            <FiPlus className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </main>
       </section>
@@ -153,7 +153,7 @@ export const MainView = () => {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 left-6 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-all hover:scale-110 flex items-center justify-center z-30"
+          className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-all hover:scale-110 active:scale-95 flex items-center justify-center z-30 min-w-[56px] min-h-[56px]"
           aria-label="Scroll to top"
         >
           <FiArrowUp className="w-5 h-5" />

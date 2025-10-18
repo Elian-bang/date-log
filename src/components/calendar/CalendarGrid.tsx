@@ -35,13 +35,13 @@ export const CalendarGrid = ({
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-white rounded-lg shadow-md p-2 sm:p-4">
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
         {weekdays.map((day, index) => (
           <div
             key={day}
-            className={`text-center text-sm font-semibold py-2 ${
+            className={`text-center text-xs sm:text-sm font-semibold py-1 sm:py-2 ${
               index === 0 ? 'text-red-500' : index === 6 ? 'text-blue-500' : 'text-gray-600'
             }`}
           >
@@ -51,7 +51,7 @@ export const CalendarGrid = ({
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {calendarDays.map((day, index) => (
           <DateCell
             key={index}

@@ -36,26 +36,26 @@ export const DateCell = ({
       onClick={handleClick}
       disabled={!isCurrentMonth}
       className={`
-        relative aspect-square p-2 rounded-lg transition-all
-        ${isCurrentMonth ? 'hover:bg-gray-100 cursor-pointer' : 'cursor-default'}
+        relative aspect-square p-1 sm:p-2 rounded-md sm:rounded-lg transition-all min-h-[44px] sm:min-h-0
+        ${isCurrentMonth ? 'hover:bg-gray-100 active:bg-gray-200 cursor-pointer' : 'cursor-default'}
         ${isTodayDate ? 'bg-primary-light bg-opacity-20 font-bold' : ''}
         ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-800'}
       `}
       aria-label={`${format(date, 'MMMM d, yyyy')}${hasLog ? ' - has log' : ''}`}
     >
       {/* Date Number */}
-      <span className="text-sm md:text-base">{dayNumber}</span>
+      <span className="text-xs sm:text-sm md:text-base">{dayNumber}</span>
 
       {/* Dot Indicator */}
       {hasLog && isCurrentMonth && (
-        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+        <div className="absolute bottom-0.5 sm:bottom-1 left-1/2 transform -translate-x-1/2">
+          <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-primary"></div>
         </div>
       )}
 
       {/* Today Ring */}
       {isTodayDate && isCurrentMonth && (
-        <div className="absolute inset-0 border-2 border-primary rounded-lg pointer-events-none"></div>
+        <div className="absolute inset-0 border-2 border-primary rounded-md sm:rounded-lg pointer-events-none"></div>
       )}
     </button>
   );

@@ -189,17 +189,18 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
 
             <button
               onClick={() => setIsAddRegionOpen(true)}
-              className="flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm"
+              className="flex items-center gap-1 px-3 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm min-h-[44px]"
             >
               <FiPlus className="w-4 h-4" />
-              <span>지역 추가</span>
+              <span className="hidden sm:inline">지역 추가</span>
+              <span className="sm:hidden">추가</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Regions */}
         {dateLog.regions.map((region) => (
           <RegionSection

@@ -21,9 +21,9 @@ export const PlaceCard = ({
   onDelete,
 }: PlaceCardProps) => {
   return (
-    <div className="flex-shrink-0 w-64 bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="flex-shrink-0 w-[280px] sm:w-64 bg-white rounded-lg shadow-md overflow-hidden">
       {/* Image */}
-      <div className="relative h-40 bg-gray-200">
+      <div className="relative h-36 sm:h-40 bg-gray-200">
         {place.image ? (
           <img
             src={place.image}
@@ -48,24 +48,24 @@ export const PlaceCard = ({
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
         {/* Name */}
-        <h3 className="font-bold text-gray-800 text-lg truncate">{place.name}</h3>
+        <h3 className="font-bold text-gray-800 text-base sm:text-lg truncate">{place.name}</h3>
 
         {/* Memo */}
         {place.memo && (
-          <p className="text-sm text-gray-600 line-clamp-2">{place.memo}</p>
+          <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">{place.memo}</p>
         )}
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-col sm:flex-row gap-2 pt-2">
           {/* Map Link */}
           {place.link && (
             <a
               href={place.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors min-h-[44px]"
             >
               <FiMapPin className="w-4 h-4" />
               <span>지도</span>
@@ -76,7 +76,7 @@ export const PlaceCard = ({
           {/* Visited Toggle */}
           <button
             onClick={onToggleVisited}
-            className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+            className={`flex-1 px-3 py-2.5 text-sm rounded-lg transition-colors min-h-[44px] ${
               place.visited
                 ? 'bg-green-50 text-green-600 hover:bg-green-100'
                 : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
@@ -90,14 +90,14 @@ export const PlaceCard = ({
         <div className="flex gap-2 pt-1 border-t border-gray-100">
           <button
             onClick={onEdit}
-            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+            className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors min-h-[44px]"
           >
             <FiEdit2 className="w-4 h-4" />
             <span>수정</span>
           </button>
           <button
             onClick={onDelete}
-            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors min-h-[44px]"
           >
             <FiTrash2 className="w-4 h-4" />
             <span>삭제</span>
