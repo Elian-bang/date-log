@@ -1,49 +1,112 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiPlus } from 'react-icons/fi';
 import { useDateLog } from '@/hooks/useDateLog';
+import { getPreviousMonth, getNextMonth } from '@/utils/dateUtils';
+import { CalendarHeader } from './CalendarHeader';
+import { CalendarGrid } from './CalendarGrid';
+import { AddDateModal } from './AddDateModal';
 
 /**
  * Calendar View Component
- * Displays monthly calendar with date indicators
- * Phase 2 implementation - currently a placeholder
+ * Main calendar interface with month navigation and date selection
  */
-
 export const CalendarView = () => {
   const navigate = useNavigate();
-  const { data, loading } = useDateLog();
-  // TODO: Phase 2 - Implement month navigation
-  // const [currentMonth, setCurrentMonth] = useState(new Date());
+  const { data, loading, addDate } = useDateLog();
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  // Month navigation handlers
+  const handlePreviousMonth = () => {
+    setCurrentMonth(getPreviousMonth(currentMonth));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(getNextMonth(currentMonth));
+  };
+
+  // Date click handler
+  const handleDateClick = (dateString: string) => {
+    // If date has log, navigate to detail view
+    if (data[dateString]) {
+      navigate(`/date/${dateString}`);
+    } else {
+      // If no log, open add modal with this date pre-selected
+      setIsAddModalOpen(true);
+    }
+  };
+
+  // Add new date handler
+  const handleAddDate = (date: string, region: string) => {
+    addDate(date, region);
+    // Navigate to the newly created date
+    navigate(`/date/${date}`);
+  };
+
+  // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8 text-primary">
-          DateLog Calendar
-        </h1>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <p className="text-gray-600 text-center">
-            Calendar component will be implemented in Phase 2
-          </p>
-          <p className="text-gray-500 text-center mt-2 text-sm">
-            Total dates logged: {Object.keys(data).length}
-          </p>
-
-          <button
-            onClick={() => navigate('/date/2025-10-18')}
-            className="mt-6 w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary-dark transition-colors"
-          >
-            View Sample Date (2025-10-18)
-          </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold text-primary text-center">
+            DateLog
+          </h1>
         </div>
-      </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        {/* Stats */}
+        <div className="mb-6 text-center">
+          <p className="text-gray-600">
+            총 <span className="font-bold text-primary">{Object.keys(data).length}</span>개의 데이트 기록
+          </p>
+        </div>
+
+        {/* Calendar Header */}
+        <CalendarHeader
+          currentMonth={currentMonth}
+          onPreviousMonth={handlePreviousMonth}
+          onNextMonth={handleNextMonth}
+        />
+
+        {/* Calendar Grid */}
+        <CalendarGrid
+          currentMonth={currentMonth}
+          dateLogData={data}
+          onDateClick={handleDateClick}
+        />
+
+        {/* Add Date Button */}
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="fixed bottom-6 right-6 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary-dark transition-all hover:scale-110 flex items-center justify-center"
+          aria-label="Add new date"
+        >
+          <FiPlus className="w-6 h-6" />
+        </button>
+      </main>
+
+      {/* Add Date Modal */}
+      <AddDateModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAddDate={handleAddDate}
+        existingDates={Object.keys(data)}
+      />
     </div>
   );
 };
