@@ -80,31 +80,33 @@ npm run preview
 
 ## Development Phases
 
-### ✅ Phase 1: Foundation (Current)
+### ✅ Phase 1: Foundation (Complete)
 - Project setup and configuration
 - TypeScript interfaces and data structures
 - Data layer and localStorage sync
 - Custom hooks (useLocalStorage, useDateLog)
 - Routing setup with placeholders
 
-### 🔄 Phase 2: Calendar View (Next)
+### ✅ Phase 2: Calendar View (Complete)
 - Calendar component implementation
 - Month navigation
 - Date cell with indicators
 - Add new date functionality
 
-### 📋 Phase 3: Detail View (Planned)
+### ✅ Phase 3: Detail View (Complete)
 - Date detail layout
 - Place management (CRUD operations)
 - Category sections with horizontal scroll
 - Add/Edit/Delete forms
+- Multi-region support
 
-### 🗺️ Phase 4: Map Integration (Planned)
-- Map SDK integration (Kakao/Naver)
+### 🔄 Phase 4: Map Integration (In Progress)
+- Kakao Maps SDK integration
+- Basic map component (MapView)
 - Marker display for places
-- Geocoding and location services
+- Location visualization
 
-### 🚀 Phase 5: Polish & Deploy (Planned)
+### 🚀 Phase 5: Polish & Deploy (Next)
 - Performance optimization
 - Accessibility improvements
 - Production deployment
