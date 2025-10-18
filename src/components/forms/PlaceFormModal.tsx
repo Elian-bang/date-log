@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
-import { CategoryType, Place, Restaurant, RestaurantType, PlaceFormData } from '@/types';
+import { FiX, FiMapPin } from 'react-icons/fi';
+import { CategoryType, Place, Restaurant, RestaurantType, PlaceFormData, Coordinates } from '@/types';
 import { CATEGORY_CONFIG, RESTAURANT_TYPES } from '@/utils/constants';
+import { extractCoordinatesFromUrl, validateCoordinates } from '@/utils/coordinateParser';
 
 interface PlaceFormModalProps {
   isOpen: boolean;
@@ -30,30 +31,66 @@ export const PlaceFormModal = ({
     memo: '',
     image: '',
     link: '',
+    coordinates: undefined,
     type: '한식',
   });
   const [error, setError] = useState('');
+  const [coordinateInfo, setCoordinateInfo] = useState<{
+    status: 'none' | 'extracting' | 'success' | 'failed';
+    coordinates?: Coordinates;
+  }>({ status: 'none' });
 
   // Populate form when editing
   useEffect(() => {
     if (editingPlace) {
+      const coords = editingPlace.coordinates;
       setFormData({
         name: editingPlace.name,
         memo: editingPlace.memo || '',
         image: editingPlace.image || '',
         link: editingPlace.link,
+        coordinates: coords,
         type: (editingPlace as Restaurant).type || '한식',
       });
+      if (coords && validateCoordinates(coords)) {
+        setCoordinateInfo({ status: 'success', coordinates: coords });
+      }
     } else {
       setFormData({
         name: '',
         memo: '',
         image: '',
         link: '',
+        coordinates: undefined,
         type: '한식',
       });
+      setCoordinateInfo({ status: 'none' });
     }
   }, [editingPlace]);
+
+  // Extract coordinates when link changes
+  useEffect(() => {
+    if (!formData.link || !formData.link.trim()) {
+      setCoordinateInfo({ status: 'none' });
+      return;
+    }
+
+    setCoordinateInfo({ status: 'extracting' });
+
+    // Debounce coordinate extraction
+    const timer = setTimeout(() => {
+      const coords = extractCoordinatesFromUrl(formData.link);
+      if (coords && validateCoordinates(coords)) {
+        setFormData((prev) => ({ ...prev, coordinates: coords }));
+        setCoordinateInfo({ status: 'success', coordinates: coords });
+      } else {
+        setFormData((prev) => ({ ...prev, coordinates: undefined }));
+        setCoordinateInfo({ status: 'failed' });
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.link]);
 
   if (!isOpen) return null;
 
@@ -81,9 +118,11 @@ export const PlaceFormModal = ({
       memo: '',
       image: '',
       link: '',
+      coordinates: undefined,
       type: '한식',
     });
     setError('');
+    setCoordinateInfo({ status: 'none' });
     onClose();
   };
 
@@ -93,9 +132,11 @@ export const PlaceFormModal = ({
       memo: '',
       image: '',
       link: '',
+      coordinates: undefined,
       type: '한식',
     });
     setError('');
+    setCoordinateInfo({ status: 'none' });
     onClose();
   };
 
@@ -203,12 +244,41 @@ export const PlaceFormModal = ({
               id="link"
               value={formData.link}
               onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-              placeholder="https://map.naver.com/..."
+              placeholder="https://map.naver.com/ 또는 https://place.map.kakao.com/"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               required
             />
+
+            {/* Coordinate Status */}
+            {coordinateInfo.status !== 'none' && (
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                {coordinateInfo.status === 'extracting' && (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                    <span className="text-gray-600">좌표 추출 중...</span>
+                  </>
+                )}
+                {coordinateInfo.status === 'success' && coordinateInfo.coordinates && (
+                  <>
+                    <FiMapPin className="w-3 h-3 text-green-600" />
+                    <span className="text-green-600">
+                      좌표 확인됨 ({coordinateInfo.coordinates.lat.toFixed(4)}, {coordinateInfo.coordinates.lng.toFixed(4)})
+                    </span>
+                  </>
+                )}
+                {coordinateInfo.status === 'failed' && (
+                  <>
+                    <FiMapPin className="w-3 h-3 text-orange-600" />
+                    <span className="text-orange-600">
+                      좌표를 추출할 수 없습니다. 지도에 마커가 표시되지 않을 수 있습니다.
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+
             <p className="text-xs text-gray-500 mt-1">
-              네이버 지도 또는 카카오맵 링크를 입력하세요
+              네이버 지도 또는 카카오맵 링크를 입력하면 자동으로 좌표가 추출됩니다
             </p>
           </div>
 

@@ -146,6 +146,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
         memo: data.memo,
         image: data.image,
         link: data.link,
+        coordinates: data.coordinates,
         ...(currentCategory === 'restaurant' && { type: data.type }),
       });
     } else {
@@ -155,6 +156,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
         memo: data.memo,
         image: data.image,
         link: data.link,
+        coordinates: data.coordinates,
         visited: false,
         ...(currentCategory === 'restaurant' && { type: data.type! }),
       });

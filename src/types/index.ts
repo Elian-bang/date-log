@@ -65,5 +65,6 @@ export interface PlaceFormData {
   memo?: string;
   image?: string;
   link: string;
+  coordinates?: Coordinates; // Extracted from map link
   type?: RestaurantType; // Only for restaurants
 }
