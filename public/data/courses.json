@@ -1,0 +1,161 @@
+{
+  "2025-10-18": {
+    "date": "2025-10-18",
+    "region": "삼송",
+    "categories": {
+      "cafe": [
+        {
+          "id": "cafe-001",
+          "name": "나무사이로",
+          "memo": "분위기 좋은 창가 자리 있음",
+          "image": "/images/cafe1.jpg",
+          "link": "https://map.naver.com/p/search/%EB%82%98%EB%AC%B4%EC%82%AC%EC%9D%B4%EB%A1%9C",
+          "visited": true,
+          "coordinates": {
+            "lat": 37.6586,
+            "lng": 126.8923
+          }
+        },
+        {
+          "id": "cafe-002",
+          "name": "카페 봄",
+          "memo": "브런치 메뉴가 맛있음",
+          "image": "/images/cafe2.jpg",
+          "link": "https://map.naver.com/",
+          "visited": false,
+          "coordinates": {
+            "lat": 37.6590,
+            "lng": 126.8930
+          }
+        }
+      ],
+      "restaurant": [
+        {
+          "id": "rest-001",
+          "name": "이이요",
+          "type": "한식",
+          "memo": "고등어정식 맛있음",
+          "image": "/images/food1.jpg",
+          "link": "https://map.naver.com/",
+          "visited": true,
+          "coordinates": {
+            "lat": 37.6580,
+            "lng": 126.8920
+          }
+        },
+        {
+          "id": "rest-002",
+          "name": "스시 하루",
+          "type": "일식",
+          "memo": "신선한 회",
+          "image": "/images/food2.jpg",
+          "link": "https://map.naver.com/",
+          "visited": false,
+          "coordinates": {
+            "lat": 37.6588,
+            "lng": 126.8925
+          }
+        }
+      ],
+      "spot": [
+        {
+          "id": "spot-001",
+          "name": "북한산 둘레길",
+          "memo": "산책로 좋음, 가을 단풍 예쁨",
+          "image": "/images/spot1.jpg",
+          "link": "https://map.naver.com/",
+          "visited": false,
+          "coordinates": {
+            "lat": 37.6600,
+            "lng": 126.8900
+          }
+        }
+      ]
+    }
+  },
+  "2025-10-15": {
+    "date": "2025-10-15",
+    "region": "홍대",
+    "categories": {
+      "cafe": [
+        {
+          "id": "cafe-003",
+          "name": "앤트러사이트",
+          "memo": "넓고 쾌적함",
+          "image": "/images/cafe3.jpg",
+          "link": "https://map.naver.com/",
+          "visited": true,
+          "coordinates": {
+            "lat": 37.5563,
+            "lng": 126.9239
+          }
+        }
+      ],
+      "restaurant": [
+        {
+          "id": "rest-003",
+          "name": "홍대 삼겹살",
+          "type": "고기집",
+          "memo": "두툼한 삼겹살",
+          "image": "/images/food3.jpg",
+          "link": "https://map.naver.com/",
+          "visited": true,
+          "coordinates": {
+            "lat": 37.5565,
+            "lng": 126.9240
+          }
+        }
+      ],
+      "spot": [
+        {
+          "id": "spot-002",
+          "name": "홍대 거리",
+          "memo": "버스킹 공연 많음",
+          "image": "/images/spot2.jpg",
+          "link": "https://map.naver.com/",
+          "visited": true,
+          "coordinates": {
+            "lat": 37.5560,
+            "lng": 126.9230
+          }
+        }
+      ]
+    }
+  },
+  "2025-10-10": {
+    "date": "2025-10-10",
+    "region": "강남",
+    "categories": {
+      "cafe": [],
+      "restaurant": [
+        {
+          "id": "rest-004",
+          "name": "청담 파스타",
+          "type": "양식",
+          "memo": "크림 파스타 추천",
+          "image": "/images/food4.jpg",
+          "link": "https://map.naver.com/",
+          "visited": false,
+          "coordinates": {
+            "lat": 37.5172,
+            "lng": 127.0473
+          }
+        }
+      ],
+      "spot": [
+        {
+          "id": "spot-003",
+          "name": "코엑스 별마당도서관",
+          "memo": "사진 찍기 좋음",
+          "image": "/images/spot3.jpg",
+          "link": "https://map.naver.com/",
+          "visited": true,
+          "coordinates": {
+            "lat": 37.5115,
+            "lng": 127.0595
+          }
+        }
+      ]
+    }
+  }
+}
