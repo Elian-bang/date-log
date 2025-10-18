@@ -100,7 +100,7 @@ export const MainView = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Calendar Section */}
-      <section ref={calendarSectionRef} className="min-h-screen">
+      <section ref={calendarSectionRef}>
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
           <div className="max-w-4xl mx-auto px-4 py-4">
@@ -149,7 +149,7 @@ export const MainView = () => {
 
       {/* Detail Section */}
       {dateId && (
-        <section ref={detailSectionRef} className="min-h-screen">
+        <section ref={detailSectionRef}>
           <DateDetailView onBackToCalendar={scrollToCalendar} />
         </section>
       )}
