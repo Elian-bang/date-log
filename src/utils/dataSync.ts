@@ -1,6 +1,7 @@
 import { DateLogData } from '@/types';
 import { STORAGE_KEY, DEFAULT_DATA_PATH } from './constants';
 import { logger } from './logger';
+import { extractCoordinatesFromUrl } from './coordinateParser';
 
 /**
  * Data Synchronization Utilities
@@ -12,6 +13,66 @@ import { logger } from './logger';
  */
 const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
+/**
+ * Migrate coordinates for places that have links but no coordinates
+ */
+const migrateCoordinates = (data: DateLogData): DateLogData => {
+  const migratedData: DateLogData = {};
+  let coordinatesMigrated = 0;
+
+  Object.keys(data).forEach((dateKey) => {
+    const dateEntry = data[dateKey];
+
+    migratedData[dateKey] = {
+      ...dateEntry,
+      regions: dateEntry.regions.map((region) => ({
+        ...region,
+        categories: {
+          cafe: region.categories.cafe.map((place) => {
+            if (!place.coordinates && place.link) {
+              const coords = extractCoordinatesFromUrl(place.link);
+              if (coords) {
+                coordinatesMigrated++;
+                logger.log(`Extracted coordinates for ${place.name}: ${coords.lat}, ${coords.lng}`);
+                return { ...place, coordinates: coords };
+              }
+            }
+            return place;
+          }),
+          restaurant: region.categories.restaurant.map((place) => {
+            if (!place.coordinates && place.link) {
+              const coords = extractCoordinatesFromUrl(place.link);
+              if (coords) {
+                coordinatesMigrated++;
+                logger.log(`Extracted coordinates for ${place.name}: ${coords.lat}, ${coords.lng}`);
+                return { ...place, coordinates: coords };
+              }
+            }
+            return place;
+          }),
+          spot: region.categories.spot.map((place) => {
+            if (!place.coordinates && place.link) {
+              const coords = extractCoordinatesFromUrl(place.link);
+              if (coords) {
+                coordinatesMigrated++;
+                logger.log(`Extracted coordinates for ${place.name}: ${coords.lat}, ${coords.lng}`);
+                return { ...place, coordinates: coords };
+              }
+            }
+            return place;
+          }),
+        },
+      })),
+    };
+  });
+
+  if (coordinatesMigrated > 0) {
+    logger.log(`Coordinates migration completed: ${coordinatesMigrated} places updated`);
+  }
+
+  return migratedData;
 };
 
 /**
@@ -69,7 +130,10 @@ export const loadInitialData = async (): Promise<DateLogData> => {
     if (stored) {
       logger.log('Loading data from localStorage');
       const data = JSON.parse(stored);
-      const migratedData = migrateData(data);
+      let migratedData = migrateData(data);
+
+      // Migrate coordinates from map links
+      migratedData = migrateCoordinates(migratedData);
 
       // Save migrated data back to localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedData));
@@ -85,7 +149,10 @@ export const loadInitialData = async (): Promise<DateLogData> => {
     }
 
     const data: DateLogData = await response.json();
-    const migratedData = migrateData(data);
+    let migratedData = migrateData(data);
+
+    // Migrate coordinates from map links
+    migratedData = migrateCoordinates(migratedData);
 
     // Save to localStorage for future use
     localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedData));
