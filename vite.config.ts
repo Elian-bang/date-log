@@ -13,6 +13,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: [
+      'date-log.onrender.com',
+      'localhost',
+      '.onrender.com', // Allow all Render.com subdomains
+    ],
   },
   preview: {
     host: '0.0.0.0',
