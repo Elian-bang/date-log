@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DateLogData, DateLog, CategoryType, Place, Restaurant } from '@/types';
 import { loadInitialData, saveData, resetData } from '@/utils/dataSync';
+import { logger } from '@/utils/logger';
 
 /**
  * Custom hook for managing date log data with multi-region support
@@ -48,7 +49,7 @@ export const useDateLog = (): UseDateLogReturn => {
         setError(null);
       } catch (err) {
         setError(err as Error);
-        console.error('Failed to load initial data:', err);
+        logger.error('Failed to load initial data:', err);
       } finally {
         setLoading(false);
       }

@@ -1,5 +1,6 @@
 import { RouterProvider } from 'react-router-dom';
 import { router } from './routes';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 /**
  * Main App Component
@@ -7,9 +8,11 @@ import { router } from './routes';
 
 function App() {
   return (
-    <div className="app">
-      <RouterProvider router={router} />
-    </div>
+    <ErrorBoundary>
+      <div className="app">
+        <RouterProvider router={router} />
+      </div>
+    </ErrorBoundary>
   );
 }
 

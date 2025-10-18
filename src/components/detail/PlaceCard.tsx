@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { FiMapPin, FiEdit2, FiTrash2, FiExternalLink } from 'react-icons/fi';
 import { Place, CategoryType } from '@/types';
 
@@ -12,8 +13,9 @@ interface PlaceCardProps {
 /**
  * Place Card Component
  * Displays place information with actions
+ * Memoized to prevent unnecessary re-renders
  */
-export const PlaceCard = ({
+export const PlaceCard = memo(({
   place,
   // category is reserved for future use (e.g., category-specific styling)
   onToggleVisited,
@@ -106,4 +108,4 @@ export const PlaceCard = ({
       </div>
     </div>
   );
-};
+});

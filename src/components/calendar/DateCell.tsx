@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { format, isSameMonth } from 'date-fns';
 import { isToday, formatDateForStorage, hasLogData } from '@/utils/dateUtils';
 import { DateLogData } from '@/types';
@@ -13,8 +14,9 @@ interface DateCellProps {
 /**
  * Date Cell Component
  * Individual calendar cell with date number and indicator
+ * Memoized to prevent unnecessary re-renders
  */
-export const DateCell = ({
+export const DateCell = memo(({
   date,
   currentMonth,
   dateLogData,
@@ -67,4 +69,4 @@ export const DateCell = ({
       )}
     </button>
   );
-};
+});

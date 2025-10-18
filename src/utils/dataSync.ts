@@ -1,5 +1,6 @@
 import { DateLogData } from '@/types';
 import { STORAGE_KEY, DEFAULT_DATA_PATH } from './constants';
+import { logger } from './logger';
 
 /**
  * Data Synchronization Utilities
@@ -28,7 +29,7 @@ const migrateData = (data: any): DateLogData => {
     // Check if old format (has 'region' string instead of 'regions' array)
     if (dateEntry.region && !dateEntry.regions) {
       migrationOccurred = true;
-      console.log(`Migrating old format data for date: ${dateKey}`);
+      logger.log(`Migrating old format data for date: ${dateKey}`);
       migratedData[dateKey] = {
         date: dateEntry.date,
         regions: [
@@ -50,7 +51,7 @@ const migrateData = (data: any): DateLogData => {
   });
 
   if (migrationOccurred) {
-    console.log('Data migration completed successfully');
+    logger.log('Data migration completed successfully');
   }
 
   return migratedData;
@@ -66,7 +67,7 @@ export const loadInitialData = async (): Promise<DateLogData> => {
     const stored = localStorage.getItem(STORAGE_KEY);
 
     if (stored) {
-      console.log('Loading data from localStorage');
+      logger.log('Loading data from localStorage');
       const data = JSON.parse(stored);
       const migratedData = migrateData(data);
 
@@ -76,7 +77,7 @@ export const loadInitialData = async (): Promise<DateLogData> => {
     }
 
     // If no localStorage data, fetch from JSON file
-    console.log('Loading data from JSON file');
+    logger.log('Loading data from JSON file');
     const response = await fetch(DEFAULT_DATA_PATH);
 
     if (!response.ok) {
@@ -91,7 +92,7 @@ export const loadInitialData = async (): Promise<DateLogData> => {
 
     return migratedData;
   } catch (error) {
-    console.error('Error loading initial data:', error);
+    logger.error('Error loading initial data:', error);
     // Return empty data structure on error
     return {};
   }
@@ -103,13 +104,13 @@ export const loadInitialData = async (): Promise<DateLogData> => {
 export const saveData = (data: DateLogData): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    console.log('Data saved to localStorage');
+    logger.log('Data saved to localStorage');
   } catch (error) {
-    console.error('Error saving data to localStorage:', error);
+    logger.error('Error saving data to localStorage:', error);
 
     // Check if quota exceeded
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      console.error('localStorage quota exceeded');
+      logger.error('localStorage quota exceeded');
       alert('저장 공간이 부족합니다. 일부 데이터를 삭제해주세요.');
     }
   }
@@ -123,7 +124,7 @@ export const resetData = async (): Promise<DateLogData> => {
   try {
     // Clear localStorage
     localStorage.removeItem(STORAGE_KEY);
-    console.log('localStorage cleared');
+    logger.log('localStorage cleared');
 
     // Reload from JSON file
     const response = await fetch(DEFAULT_DATA_PATH);
@@ -139,7 +140,7 @@ export const resetData = async (): Promise<DateLogData> => {
 
     return data;
   } catch (error) {
-    console.error('Error resetting data:', error);
+    logger.error('Error resetting data:', error);
     // Return empty data structure on error
     return {};
   }
@@ -160,7 +161,7 @@ export const checkStorageQuota = (): { used: number; total: number; percentage: 
       }
     }
   } catch (error) {
-    console.error('Error checking storage quota:', error);
+    logger.error('Error checking storage quota:', error);
   }
 
   return {
