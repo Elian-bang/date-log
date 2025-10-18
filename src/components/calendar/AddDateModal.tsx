@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 import { getTodayStorageFormat } from '@/utils/dateUtils';
 
@@ -7,6 +7,7 @@ interface AddDateModalProps {
   onClose: () => void;
   onAddDate: (date: string, region: string) => void;
   existingDates: string[];
+  initialDate?: string; // Optional: pre-select a specific date
 }
 
 /**
@@ -18,10 +19,18 @@ export const AddDateModal = ({
   onClose,
   onAddDate,
   existingDates,
+  initialDate,
 }: AddDateModalProps) => {
-  const [selectedDate, setSelectedDate] = useState(getTodayStorageFormat());
+  const [selectedDate, setSelectedDate] = useState(initialDate || getTodayStorageFormat());
   const [region, setRegion] = useState('');
   const [error, setError] = useState('');
+
+  // Update selected date when initialDate changes or modal opens
+  useEffect(() => {
+    if (isOpen && initialDate) {
+      setSelectedDate(initialDate);
+    }
+  }, [isOpen, initialDate]);
 
   if (!isOpen) return null;
 

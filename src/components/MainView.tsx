@@ -18,6 +18,7 @@ export const MainView = () => {
   const { data, loading, addDate } = useDateLog();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedDateForModal, setSelectedDateForModal] = useState<string | undefined>(undefined);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Refs for scroll sections
@@ -63,6 +64,7 @@ export const MainView = () => {
     if (data[dateString]) {
       navigate(`/date/${dateString}`);
     } else {
+      setSelectedDateForModal(dateString);
       setIsAddModalOpen(true);
     }
   };
@@ -133,7 +135,10 @@ export const MainView = () => {
 
           {/* Add Date Button */}
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => {
+              setSelectedDateForModal(undefined);
+              setIsAddModalOpen(true);
+            }}
             className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-primary text-white p-3 sm:p-4 rounded-full shadow-lg hover:bg-primary-dark transition-all hover:scale-110 active:scale-95 flex items-center justify-center z-30 min-w-[56px] min-h-[56px]"
             aria-label="Add new date"
           >
@@ -163,9 +168,13 @@ export const MainView = () => {
       {/* Add Date Modal */}
       <AddDateModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setSelectedDateForModal(undefined);
+        }}
         onAddDate={handleAddDate}
         existingDates={Object.keys(data)}
+        initialDate={selectedDateForModal}
       />
     </div>
   );
