@@ -131,6 +131,7 @@ export const MainView = () => {
             currentMonth={currentMonth}
             dateLogData={data}
             onDateClick={handleDateClick}
+            selectedDate={dateId}
           />
 
           {/* Add Date Button */}

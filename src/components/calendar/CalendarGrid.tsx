@@ -6,6 +6,7 @@ interface CalendarGridProps {
   currentMonth: Date;
   dateLogData: DateLogData;
   onDateClick: (dateString: string) => void;
+  selectedDate?: string; // Currently selected/viewed date
 }
 
 /**
@@ -16,6 +17,7 @@ export const CalendarGrid = ({
   currentMonth,
   dateLogData,
   onDateClick,
+  selectedDate,
 }: CalendarGridProps) => {
   // Get first and last day of the month
   const monthStart = startOfMonth(currentMonth);
@@ -59,6 +61,7 @@ export const CalendarGrid = ({
             currentMonth={currentMonth}
             dateLogData={dateLogData}
             onClick={onDateClick}
+            selectedDate={selectedDate}
           />
         ))}
       </div>
