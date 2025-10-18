@@ -1,10 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc --noEmit)",
-      "Bash(npm run build)",
-      "Bash(git add .)",
-      "Bash(git commit -m \"Improvement: Multi-region support - one date can now have multiple regions with their own places\")"
+      "Bash(git add src/components/MainView.tsx src/components/calendar/AddDateModal.tsx)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix: Pre-select clicked date in Add Date modal\n\nFixed bug where clicking a date without data would always show today''s date in the \"Add New Date\" modal instead of the clicked date.\n\nProblem:\n- When clicking a calendar date without data, the modal would open\n- The date field would always default to today''s date\n- User had to manually change the date to the one they clicked\n\nRoot Cause:\n- MainView.tsx didn''t pass the clicked date to AddDateModal\n- AddDateModal always initialized with getTodayStorageFormat()\n- No mechanism to update the date when modal opened\n\nSolution:\n\nAddDateModal.tsx:\n- Added optional initialDate prop to pre-select a specific date\n- Added useEffect to update selectedDate when modal opens with initialDate\n- Gracefully falls back to today''s date when no initialDate provided\n\nMainView.tsx:\n- Added selectedDateForModal state to track clicked date\n- Updated handleDateClick to set selectedDateForModal before opening modal\n- Passed initialDate prop to AddDateModal component\n- Reset selectedDateForModal when modal closes or FAB button clicked\n\nBehavior:\n- Click calendar date without data → modal opens with that date pre-selected\n- Click floating \"Add\" button → modal opens with today''s date (default)\n- Close modal → resets selected date for next use\n\nBenefits:\n- Better UX: users don''t need to manually select the date they just clicked\n- Intuitive behavior: modal shows the date the user was interested in\n- Maintains flexibility: FAB button still defaults to today\n\nBundle size: ~302KB (gzip: ~90KB)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
