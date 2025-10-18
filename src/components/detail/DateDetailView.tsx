@@ -168,7 +168,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
 
   // Collect all places from all regions and categories with category info
   const allPlaces = useMemo(() => {
-    if (!dateLog || !dateLog.regions) {
+    if (!dateLog?.regions) {
       return [];
     }
 
@@ -188,7 +188,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
       });
     });
     return places;
-  }, [dateLog]);
+  }, [dateLog?.regions]);
 
   // Calculate map center from places with coordinates
   const mapCenter = useMemo(() => {
