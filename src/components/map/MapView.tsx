@@ -26,14 +26,24 @@ interface MapViewProps {
 export const MapView = ({ places, center, onMarkerClick }: MapViewProps) => {
   const [selectedPlace, setSelectedPlace] = useState<PlaceMarker | null>(null);
 
-  // Default center: Seoul City Hall
-  const defaultCenter = { lat: 37.5665, lng: 126.978 };
-  const mapCenter = center || defaultCenter;
-
   // Filter places with valid coordinates
   const validPlaces = places.filter(
     (place) => place.coordinates && place.coordinates.lat && place.coordinates.lng
   );
+
+  // Calculate map center from places or use provided center
+  const mapCenter = center || (() => {
+    if (validPlaces.length === 0) {
+      // Default to Seoul City Hall if no coordinates
+      return { lat: 37.5665, lng: 126.978 };
+    }
+
+    // Calculate average position
+    const avgLat = validPlaces.reduce((sum, place) => sum + place.coordinates!.lat, 0) / validPlaces.length;
+    const avgLng = validPlaces.reduce((sum, place) => sum + place.coordinates!.lng, 0) / validPlaces.length;
+
+    return { lat: avgLat, lng: avgLng };
+  })();
 
   const handleMarkerClick = (place: PlaceMarker) => {
     setSelectedPlace(place);

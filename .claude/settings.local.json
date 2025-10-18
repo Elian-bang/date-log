@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git commit -m \"$(cat <<''EOF''\nFix: Render.com deployment host blocking issue\n\nFixed \"Blocked request. This host is not allowed\" error on Render.com deployment.\n\nProblem:\n- Render.com deployment showed \"Blocked request\" error\n- Vite dev server blocks unknown hosts by default for security\n- Error message: \"date-log.onrender.com is not allowed\"\n\nRoot Cause:\n- Render.com is running npm run dev (development server)\n- Should be running npm start (production server with serve)\n- Vite dev server has allowedHosts security restriction\n\nSolution:\n\nvite.config.ts:\n- Added allowedHosts to server configuration\n- Whitelisted ''date-log.onrender.com''\n- Whitelisted ''.onrender.com'' for all subdomains\n- Keeps ''localhost'' for local development\n- Provides fallback if Render.com uses dev server\n\nDEPLOYMENT.md (New):\n- Comprehensive deployment guide for Render.com\n- Build/Start command specifications\n- Environment variable setup instructions\n- Common issues and solutions\n- Production checklist\n- Performance metrics\n- Troubleshooting guide\n\nCritical Configuration:\n- Build Command: npm install; npm run build\n- Start Command: npm start (NOT npm run dev)\n- Env Variable: VITE_KAKAO_MAP_API_KEY\n\nNext Steps for Render.com:\n1. Verify Start Command is set to \"npm start\"\n2. Add VITE_KAKAO_MAP_API_KEY environment variable\n3. Redeploy after this commit\n\nTechnical Details:\n- allowedHosts prevents DNS rebinding attacks\n- serve package provides production-grade static serving\n- Vite dev server not recommended for production\n- Bundle size: ~302KB (gzip: ~90KB)\n\nBuild Status: ✅ Successful\nEOF\n)\")",
-      "Bash(git push origin main)"
+      "Bash(git push origin main)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(git add -A)"
     ],
     "deny": [],
     "ask": []

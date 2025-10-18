@@ -44,6 +44,34 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
   const [deleteRegionConfirm, setDeleteRegionConfirm] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
 
+  // Get date log data (must be called before any conditional returns)
+  const dateLog = dateId ? getDateLog(dateId) : undefined;
+
+  // Collect all places - must be called before any conditional returns (React hooks rule)
+  const allPlaces = useMemo(() => {
+    if (!dateLog?.regions) {
+      return [];
+    }
+
+    const places: Array<(Place | Restaurant) & { category: CategoryType }> = [];
+    dateLog.regions.forEach((region) => {
+      // Add cafes with category
+      region.categories.cafe.forEach((cafe) => {
+        places.push({ ...cafe, category: 'cafe' as CategoryType });
+      });
+      // Add restaurants with category
+      region.categories.restaurant.forEach((restaurant) => {
+        places.push({ ...restaurant, category: 'restaurant' as CategoryType });
+      });
+      // Add spots with category
+      region.categories.spot.forEach((spot) => {
+        places.push({ ...spot, category: 'spot' as CategoryType });
+      });
+    });
+    return places;
+  }, [dateLog?.regions]);
+
+  // Early returns AFTER all hooks
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -62,8 +90,6 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
       </div>
     );
   }
-
-  const dateLog = getDateLog(dateId);
 
   if (!dateLog) {
     return (
@@ -166,52 +192,6 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     0
   );
 
-  // Collect all places from all regions and categories with category info
-  const allPlaces = useMemo(() => {
-    if (!dateLog?.regions) {
-      return [];
-    }
-
-    const places: Array<(Place | Restaurant) & { category: CategoryType }> = [];
-    dateLog.regions.forEach((region) => {
-      // Add cafes with category
-      region.categories.cafe.forEach((cafe) => {
-        places.push({ ...cafe, category: 'cafe' as CategoryType });
-      });
-      // Add restaurants with category
-      region.categories.restaurant.forEach((restaurant) => {
-        places.push({ ...restaurant, category: 'restaurant' as CategoryType });
-      });
-      // Add spots with category
-      region.categories.spot.forEach((spot) => {
-        places.push({ ...spot, category: 'spot' as CategoryType });
-      });
-    });
-    return places;
-  }, [dateLog?.regions]);
-
-  // Calculate map center from places with coordinates
-  const mapCenter = useMemo(() => {
-    const placesWithCoords = allPlaces.filter(
-      (place) => place.coordinates && place.coordinates.lat && place.coordinates.lng
-    );
-
-    if (placesWithCoords.length === 0) {
-      // Default to Seoul City Hall if no coordinates
-      return { lat: 37.5665, lng: 126.978 };
-    }
-
-    // Calculate average position
-    const avgLat =
-      placesWithCoords.reduce((sum, place) => sum + place.coordinates!.lat, 0) /
-      placesWithCoords.length;
-    const avgLng =
-      placesWithCoords.reduce((sum, place) => sum + place.coordinates!.lng, 0) /
-      placesWithCoords.length;
-
-    return { lat: avgLat, lng: avgLng };
-  }, [allPlaces]);
-
   return (
     <div className="bg-gray-50">
       {/* Header */}
@@ -266,7 +246,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
         {showMap && (
           <div className="mb-6 bg-white rounded-lg shadow-md overflow-hidden">
             <div className="h-[400px] sm:h-[500px]">
-              <MapView places={allPlaces} center={mapCenter} />
+              <MapView places={allPlaces} />
             </div>
           </div>
         )}
