@@ -1,0 +1,305 @@
+/**
+ * DateLog Adapter
+ * Transforms data between frontend and backend models
+ */
+
+import type {
+  DateLogData,
+  DateLog,
+  RegionSection,
+  Cafe,
+  Restaurant,
+  Spot,
+  Coordinates,
+} from '../../types';
+
+import type {
+  DateEntryResponse,
+  CreateDateEntryRequest,
+  CafeResponse,
+  RestaurantResponse,
+  SpotResponse,
+} from './types';
+
+import { RestaurantType } from './types';
+
+/**
+ * DateLog Adapter for bidirectional data transformation
+ */
+export class DateLogAdapter {
+  // ===== Backend → Frontend Transformations =====
+
+  /**
+   * Transform backend date entries to frontend DateLogData
+   * Groups multiple DateEntry (single region each) into multi-region structure
+   */
+  static toFrontendModel(entries: DateEntryResponse[]): DateLogData {
+    const grouped: DateLogData = {};
+
+    entries.forEach((entry) => {
+      // Initialize date entry if not exists
+      if (!grouped[entry.date]) {
+        grouped[entry.date] = {
+          date: entry.date,
+          regions: [],
+        };
+      }
+
+      // Add region with its places
+      grouped[entry.date].regions.push({
+        id: entry.id, // Use backend UUID as region ID
+        name: entry.region,
+        categories: {
+          cafe: entry.cafes.map(this.toCafe),
+          restaurant: entry.restaurants.map(this.toRestaurant),
+          spot: entry.spots.map(this.toSpot),
+        },
+      });
+    });
+
+    return grouped;
+  }
+
+  /**
+   * Transform single backend DateEntry to frontend DateLog
+   */
+  static toFrontendDateLog(entry: DateEntryResponse): DateLog {
+    return {
+      date: entry.date,
+      regions: [
+        {
+          id: entry.id,
+          name: entry.region,
+          categories: {
+            cafe: entry.cafes.map(this.toCafe),
+            restaurant: entry.restaurants.map(this.toRestaurant),
+            spot: entry.spots.map(this.toSpot),
+          },
+        },
+      ],
+    };
+  }
+
+  /**
+   * Transform backend Cafe to frontend Cafe
+   */
+  private static toCafe(cafe: CafeResponse): Cafe {
+    return {
+      id: cafe.id,
+      name: cafe.name,
+      memo: cafe.memo || undefined,
+      image: cafe.image || undefined,
+      link: cafe.link || '',
+      visited: cafe.visited,
+      coordinates: DateLogAdapter.toCoordinates(cafe.latitude, cafe.longitude),
+    };
+  }
+
+  /**
+   * Transform backend Restaurant to frontend Restaurant
+   */
+  private static toRestaurant(restaurant: RestaurantResponse): Restaurant {
+    return {
+      id: restaurant.id,
+      name: restaurant.name,
+      type: DateLogAdapter.toFrontendRestaurantType(restaurant.type),
+      memo: restaurant.memo || undefined,
+      image: restaurant.image || undefined,
+      link: restaurant.link || '',
+      visited: restaurant.visited,
+      coordinates: DateLogAdapter.toCoordinates(restaurant.latitude, restaurant.longitude),
+    };
+  }
+
+  /**
+   * Transform backend Spot to frontend Spot
+   */
+  private static toSpot(spot: SpotResponse): Spot {
+    return {
+      id: spot.id,
+      name: spot.name,
+      memo: spot.memo || undefined,
+      image: spot.image || undefined,
+      link: spot.link || '',
+      visited: spot.visited,
+      coordinates: DateLogAdapter.toCoordinates(spot.latitude, spot.longitude),
+    };
+  }
+
+  /**
+   * Transform backend latitude/longitude to frontend coordinates
+   */
+  private static toCoordinates(latitude?: number, longitude?: number): Coordinates | undefined {
+    if (latitude !== undefined && latitude !== null && longitude !== undefined && longitude !== null) {
+      return { lat: latitude, lng: longitude };
+    }
+    return undefined;
+  }
+
+  /**
+   * Map backend RestaurantType to frontend type
+   */
+  private static toFrontendRestaurantType(type: RestaurantType): Restaurant['type'] {
+    // Backend enum already uses Korean strings, direct mapping
+    const typeMap: Record<string, Restaurant['type']> = {
+      '한식': '한식',
+      '일식': '일식',
+      '중식': '중식',
+      '고기집': '고기집',
+      '전체': '전체',
+    };
+
+    return typeMap[type] || '기타';
+  }
+
+  // ===== Frontend → Backend Transformations =====
+
+  /**
+   * Transform frontend DateLog to backend CreateDateEntryRequest array
+   * Splits multi-region structure into individual DateEntry creation requests
+   */
+  static toBackendCreateRequests(dateLog: DateLog): CreateDateEntryRequest[] {
+    return dateLog.regions.map((region) => ({
+      date: dateLog.date,
+      region: region.name,
+      cafes: region.categories.cafe.map((cafe) => this.toBackendCafe(cafe)),
+      restaurants: region.categories.restaurant.map((restaurant) => this.toBackendRestaurant(restaurant)),
+      spots: region.categories.spot.map((spot) => this.toBackendSpot(spot)),
+    }));
+  }
+
+  /**
+   * Transform single region to CreateDateEntryRequest
+   */
+  static toBackendCreateRequest(date: string, regionName: string): CreateDateEntryRequest {
+    return {
+      date,
+      region: regionName,
+    };
+  }
+
+  /**
+   * Transform frontend Cafe to backend CreateCafeRequest
+   */
+  static toBackendCafe(cafe: Cafe): {
+    name: string;
+    memo?: string;
+    image?: string;
+    link?: string;
+    visited?: boolean;
+    latitude?: number;
+    longitude?: number;
+  } {
+    return {
+      name: cafe.name,
+      memo: cafe.memo,
+      image: cafe.image,
+      link: cafe.link || undefined,
+      visited: cafe.visited,
+      latitude: cafe.coordinates?.lat,
+      longitude: cafe.coordinates?.lng,
+    };
+  }
+
+  /**
+   * Transform frontend Restaurant to backend CreateRestaurantRequest
+   */
+  static toBackendRestaurant(restaurant: Restaurant): {
+    name: string;
+    type: RestaurantType;
+    memo?: string;
+    image?: string;
+    link?: string;
+    visited?: boolean;
+    latitude?: number;
+    longitude?: number;
+  } {
+    return {
+      name: restaurant.name,
+      type: this.toBackendRestaurantType(restaurant.type),
+      memo: restaurant.memo,
+      image: restaurant.image,
+      link: restaurant.link || undefined,
+      visited: restaurant.visited,
+      latitude: restaurant.coordinates?.lat,
+      longitude: restaurant.coordinates?.lng,
+    };
+  }
+
+  /**
+   * Transform frontend Spot to backend CreateSpotRequest
+   */
+  static toBackendSpot(spot: Spot): {
+    name: string;
+    memo?: string;
+    image?: string;
+    link?: string;
+    visited?: boolean;
+    latitude?: number;
+    longitude?: number;
+  } {
+    return {
+      name: spot.name,
+      memo: spot.memo,
+      image: spot.image,
+      link: spot.link || undefined,
+      visited: spot.visited,
+      latitude: spot.coordinates?.lat,
+      longitude: spot.coordinates?.lng,
+    };
+  }
+
+  /**
+   * Map frontend restaurant type to backend RestaurantType
+   */
+  private static toBackendRestaurantType(type: Restaurant['type']): RestaurantType {
+    const typeMap: Record<Restaurant['type'], RestaurantType> = {
+      '한식': RestaurantType.KOREAN,
+      '일식': RestaurantType.JAPANESE,
+      '중식': RestaurantType.CHINESE,
+      '고기집': RestaurantType.MEAT,
+      '전체': RestaurantType.ALL,
+      '양식': RestaurantType.ALL, // Frontend has '양식' but backend doesn't, map to '전체'
+      '기타': RestaurantType.ALL,
+    };
+
+    return typeMap[type] || RestaurantType.ALL;
+  }
+
+  // ===== Utility Methods =====
+
+  /**
+   * Merge frontend DateLogData with backend entries
+   * Useful for updating local state after API operations
+   */
+  static mergeDateLogData(existing: DateLogData, newEntries: DateEntryResponse[]): DateLogData {
+    const newData = this.toFrontendModel(newEntries);
+    return { ...existing, ...newData };
+  }
+
+  /**
+   * Extract all region names from DateLogData
+   */
+  static getUniqueRegions(data: DateLogData): string[] {
+    const regions = new Set<string>();
+
+    Object.values(data).forEach((dateLog) => {
+      dateLog.regions.forEach((region) => {
+        regions.add(region.name);
+      });
+    });
+
+    return Array.from(regions).sort();
+  }
+
+  /**
+   * Find DateEntry ID by date and region name
+   */
+  static findDateEntryId(data: DateLogData, date: string, regionName: string): string | undefined {
+    const dateLog = data[date];
+    if (!dateLog) return undefined;
+
+    const region = dateLog.regions.find((r) => r.name === regionName);
+    return region?.id;
+  }
+}

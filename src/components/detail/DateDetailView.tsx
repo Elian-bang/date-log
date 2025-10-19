@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiArrowLeft, FiPlus, FiMap } from 'react-icons/fi';
-import { useDateLog } from '@/hooks/useDateLog';
+import { useDateLogHybrid } from '@/hooks';
+import { LoadingSpinner, ErrorMessage } from '@/components/common';
 import { formatDateForDisplay } from '@/utils/dateUtils';
 import { CategoryType, PlaceFormData, Place, Restaurant } from '@/types';
 import { RegionSection } from './RegionSection';
@@ -28,7 +29,10 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     deletePlace,
     toggleVisited,
     loading,
-  } = useDateLog();
+    error,
+    refreshData,
+    clearError,
+  } = useDateLogHybrid();
 
   const [isPlaceFormOpen, setIsPlaceFormOpen] = useState(false);
   const [currentRegionId, setCurrentRegionId] = useState<string>('');
@@ -73,13 +77,18 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
 
   // Early returns AFTER all hooks
   if (loading) {
+    return <LoadingSpinner message="날짜 정보를 불러오는 중..." fullScreen />;
+  }
+
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
+      <ErrorMessage
+        message={error}
+        onRetry={refreshData}
+        onDismiss={clearError}
+        variant="error"
+        fullScreen
+      />
     );
   }
 
@@ -131,44 +140,56 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     setDeleteConfirm({ regionId, category, placeId });
   };
 
-  const confirmDeletePlace = () => {
+  const confirmDeletePlace = async () => {
     if (deleteConfirm) {
-      deletePlace(dateId, deleteConfirm.regionId, deleteConfirm.category, deleteConfirm.placeId);
-      setDeleteConfirm(null);
+      try {
+        await deletePlace(dateId, deleteConfirm.regionId, deleteConfirm.category, deleteConfirm.placeId);
+        setDeleteConfirm(null);
+      } catch (err) {
+        console.error('Failed to delete place:', err);
+      }
     }
   };
 
-  const handlePlaceFormSubmit = (data: PlaceFormData) => {
-    if (editingPlace) {
-      // Update existing place
-      updatePlace(dateId, currentRegionId, currentCategory, editingPlace.id, {
-        name: data.name,
-        memo: data.memo,
-        image: data.image,
-        link: data.link,
-        coordinates: data.coordinates,
-        ...(currentCategory === 'restaurant' && { type: data.type }),
-      });
-    } else {
-      // Add new place
-      addPlace(dateId, currentRegionId, currentCategory, {
-        name: data.name,
-        memo: data.memo,
-        image: data.image,
-        link: data.link,
-        coordinates: data.coordinates,
-        visited: false,
-        ...(currentCategory === 'restaurant' && { type: data.type! }),
-      });
+  const handlePlaceFormSubmit = async (data: PlaceFormData) => {
+    try {
+      if (editingPlace) {
+        // Update existing place
+        await updatePlace(dateId, currentRegionId, currentCategory, editingPlace.id, {
+          name: data.name,
+          memo: data.memo,
+          image: data.image,
+          link: data.link,
+          coordinates: data.coordinates,
+          ...(currentCategory === 'restaurant' && { type: data.type }),
+        });
+      } else {
+        // Add new place
+        await addPlace(dateId, currentRegionId, currentCategory, {
+          name: data.name,
+          memo: data.memo,
+          image: data.image,
+          link: data.link,
+          coordinates: data.coordinates,
+          visited: false,
+          ...(currentCategory === 'restaurant' && { type: data.type! }),
+        });
+      }
+    } catch (err) {
+      console.error('Failed to save place:', err);
     }
   };
 
   // Region management handlers
-  const handleAddRegion = () => {
+  const handleAddRegion = async () => {
     if (newRegionName.trim()) {
-      addRegion(dateId, newRegionName.trim());
-      setNewRegionName('');
-      setIsAddRegionOpen(false);
+      try {
+        await addRegion(dateId, newRegionName.trim());
+        setNewRegionName('');
+        setIsAddRegionOpen(false);
+      } catch (err) {
+        console.error('Failed to add region:', err);
+      }
     }
   };
 
@@ -176,10 +197,14 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     setDeleteRegionConfirm(regionId);
   };
 
-  const confirmDeleteRegion = () => {
+  const confirmDeleteRegion = async () => {
     if (deleteRegionConfirm) {
-      deleteRegion(dateId, deleteRegionConfirm);
-      setDeleteRegionConfirm(null);
+      try {
+        await deleteRegion(dateId, deleteRegionConfirm);
+        setDeleteRegionConfirm(null);
+      } catch (err) {
+        console.error('Failed to delete region:', err);
+      }
     }
   };
 

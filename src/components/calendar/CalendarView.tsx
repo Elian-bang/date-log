@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiPlus } from 'react-icons/fi';
-import { useDateLog } from '@/hooks/useDateLog';
+import { useDateLogHybrid } from '@/hooks';
+import { LoadingSpinner, ErrorMessage } from '@/components/common';
 import { getPreviousMonth, getNextMonth } from '@/utils/dateUtils';
 import { CalendarHeader } from './CalendarHeader';
 import { CalendarGrid } from './CalendarGrid';
@@ -13,7 +14,7 @@ import { AddDateModal } from './AddDateModal';
  */
 export const CalendarView = () => {
   const navigate = useNavigate();
-  const { data, loading, addDate } = useDateLog();
+  const { data, loading, error, addDate, refreshData, clearError } = useDateLogHybrid();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -38,21 +39,32 @@ export const CalendarView = () => {
   };
 
   // Add new date handler
-  const handleAddDate = (date: string, region: string) => {
-    addDate(date, region);
-    // Navigate to the newly created date
-    navigate(`/date/${date}`);
+  const handleAddDate = async (date: string, region: string) => {
+    try {
+      await addDate(date, region);
+      // Navigate to the newly created date
+      navigate(`/date/${date}`);
+    } catch (err) {
+      // Error is handled by the hook, but we can add additional logic here if needed
+      console.error('Failed to add date:', err);
+    }
   };
 
   // Loading state
   if (loading) {
+    return <LoadingSpinner message="데이트 기록을 불러오는 중..." fullScreen />;
+  }
+
+  // Error state
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
+      <ErrorMessage
+        message={error}
+        onRetry={refreshData}
+        onDismiss={clearError}
+        variant="error"
+        fullScreen
+      />
     );
   }
 

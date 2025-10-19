@@ -26,7 +26,9 @@ dist-ssr
 # Environment files
 .env
 .env.local
-.env.production
+.env.development
+.env.staging
+# .env.production - committed for deployment, sensitive values in Vercel
 .claude
 
 # Created by https://www.toptal.com/developers/gitignore/api/windows,linux,macos,react,node,webstorm+all,visualstudiocode
@@ -157,8 +159,11 @@ web_modules/
 
 # dotenv environment variable files
 .env
+.env.development
 .env.development.local
+.env.staging
 .env.test.local
+# .env.production - committed for deployment
 .env.production.local
 .env.local
 
