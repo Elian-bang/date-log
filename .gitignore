@@ -28,7 +28,7 @@ dist-ssr
 .env.local
 .env.development
 .env.staging
-# .env.production - committed for deployment, sensitive values in Vercel
+# .env.production - committed for deployment, sensitive values in Render
 .claude
 
 # Created by https://www.toptal.com/developers/gitignore/api/windows,linux,macos,react,node,webstorm+all,visualstudiocode

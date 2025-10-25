@@ -17,7 +17,7 @@
 ```env
 NODE_ENV=staging
 PORT=3001
-CORS_ORIGIN=https://your-datelog-staging.vercel.app
+CORS_ORIGIN=https://your-datelog-staging.onrender.com
 DATABASE_URL=postgresql://admin:FbvtqKJu2wUPfeB9COXXF1lZXIvHtE9O@dpg-d3pkgmali9vc73bld3og-a.oregon-postgres.render.com:5432/date_schedule
 ```
 
@@ -32,7 +32,7 @@ DATABASE_URL=postgresql://admin:FbvtqKJu2wUPfeB9COXXF1lZXIvHtE9O@dpg-d3pkgmali9v
 ```env
 NODE_ENV=production
 PORT=3001
-CORS_ORIGIN=https://your-datelog.vercel.app
+CORS_ORIGIN=https://your-datelog.onrender.com
 DATABASE_URL=postgresql://admin:FbvtqKJu2wUPfeB9COXXF1lZXIvHtE9O@dpg-d3pkgmali9vc73bld3og-a:5432/date_schedule
 ```
 
@@ -76,9 +76,9 @@ VITE_ENABLE_API=true
 
 ### 2. 배포 설정 파일 생성
 
-#### Vercel 설정 (`vercel.json`)
+#### Render 설정 (`render.yaml`)
 
-**파일**: `my-date-log/vercel.json`
+**파일**: `my-date-log/render.yaml`
 
 **주요 설정**:
 ```json
@@ -147,7 +147,7 @@ services:
 .env.local
 .env.development
 .env.staging
-# .env.production - committed for deployment, sensitive values in Vercel
+# .env.production - committed for deployment, sensitive values in Render
 
 # dotenv environment variable files
 .env
@@ -227,7 +227,7 @@ services:
    - Frontend/Backend 분리
    - 보안 가이드라인
 
-3. **Vercel 배포 가이드**
+3. **Render 배포 가이드**
    - CLI 및 웹 배포 방법
    - 환경 변수 설정
    - 도메인 설정
@@ -263,12 +263,12 @@ services:
    - Rate Limiting (권장)
 
 9. **모니터링 및 로깅**
-   - Vercel Analytics
+   - Render Analytics
    - Render Logs
    - Error Tracking (Sentry)
 
 10. **롤백 계획**
-    - Frontend 롤백 (Vercel)
+    - Frontend 롤백 (Render)
     - Backend 롤백 (Render)
     - 데이터베이스 롤백
 
@@ -312,7 +312,7 @@ services:
 
 **CI/CD 파이프라인**:
 ```
-Git Push → Vercel/Render Auto Deploy → Health Check → Success/Failure Notification
+Git Push → Render/Render Auto Deploy → Health Check → Success/Failure Notification
 ```
 
 **자동화 항목**:
@@ -325,7 +325,7 @@ Git Push → Vercel/Render Auto Deploy → Health Check → Success/Failure Noti
 
 **적용된 보안 조치**:
 - ✅ CORS Origin 제한 (특정 도메인만 허용)
-- ✅ HTTPS 강제 (Vercel, Render 기본 제공)
+- ✅ HTTPS 강제 (Render, Render 기본 제공)
 - ✅ 환경 변수 암호화 (플랫폼 레벨)
 - ✅ Database 내부 네트워크 사용 (Production)
 - ✅ API Key 분리 (Git 커밋 제외)
@@ -364,7 +364,7 @@ Git Push → Vercel/Render Auto Deploy → Health Check → Success/Failure Noti
 | **Backend** ||||
 | `NODE_ENV` | `development` | `staging` | `production` |
 | `PORT` | `3001` | `3001` | `3001` |
-| `CORS_ORIGIN` | `*` | `https://datelog-staging.vercel.app` | `https://datelog.vercel.app` |
+| `CORS_ORIGIN` | `*` | `https://datelog-staging.onrender.com` | `https://datelog.onrender.com` |
 | `DATABASE_URL` | `postgresql://localhost:5432/datelog_dev` | `postgresql://dpg-xxx-a.oregon-postgres.render.com:5432/date_schedule` | `postgresql://dpg-xxx-a:5432/date_schedule` |
 
 ---
@@ -376,7 +376,7 @@ Git Push → Vercel/Render Auto Deploy → Health Check → Success/Failure Noti
 **Frontend**:
 ```bash
 cd my-date-log
-git push origin main  # Vercel이 자동 배포
+git push origin main  # Render이 자동 배포
 ```
 
 **Backend**:
@@ -388,11 +388,11 @@ git push origin main  # Render가 자동 배포
 ### 배포 후 필요한 작업
 
 1. **환경 변수 설정**
-   - Vercel Dashboard에서 `VITE_API_BASE_URL`, `VITE_KAKAO_MAP_API_KEY` 설정
+   - Render Dashboard에서 `VITE_API_BASE_URL`, `VITE_KAKAO_MAP_API_KEY` 설정
    - Render Dashboard에서 `DATABASE_URL`, `CORS_ORIGIN` 설정
 
 2. **CORS 업데이트**
-   - Vercel 배포 후 실제 Frontend URL 확인
+   - Render 배포 후 실제 Frontend URL 확인
    - Backend `.env.stag`, `.env.prod`의 `CORS_ORIGIN` 업데이트
 
 3. **데이터베이스 마이그레이션**
@@ -424,7 +424,7 @@ git push origin main  # Render가 자동 배포
 
 **새로 생성**:
 - ✅ `.env.staging` - Staging 환경 변수
-- ✅ `vercel.json` - Vercel 배포 설정
+- ✅ `render.yaml` - Render 배포 설정
 - ✅ `PHASE4_DEPLOYMENT.md` - 배포 가이드 (1,000+ 라인)
 - ✅ `PHASE4_COMPLETION.md` - 완료 보고서 (이 파일)
 
@@ -452,16 +452,16 @@ git push origin main  # Render가 자동 배포
 - [x] Backend `.env.prod` 완성 (NODE_ENV, PORT, CORS_ORIGIN, DATABASE_URL)
 - [x] Frontend `.env.staging` 생성
 - [x] Frontend `.env.production` 업데이트
-- [x] `vercel.json` 생성 (SPA routing, asset caching)
+- [x] `render.yaml` 생성 (SPA routing, asset caching)
 - [x] `render.yaml` 생성 (Staging + Production)
 - [x] `.gitignore` 업데이트 (환경 파일 정책)
 - [x] `package.json` 배포 스크립트 추가 (Frontend + Backend)
 - [x] `PHASE4_DEPLOYMENT.md` 작성 (1,000+ 라인)
 
 ### 배포 준비 (사용자 실행 필요)
-- [ ] Vercel 프로젝트 생성 및 GitHub 연동
+- [ ] Render 프로젝트 생성 및 GitHub 연동
 - [ ] Render Web Service 생성 및 GitHub 연동
-- [ ] Vercel 환경 변수 설정
+- [ ] Render 환경 변수 설정
 - [ ] Render 환경 변수 설정
 - [ ] Git push 및 자동 배포 확인
 - [ ] Staging DB 마이그레이션
@@ -475,14 +475,14 @@ git push origin main  # Render가 자동 배포
 
 **구현 완료 항목**:
 1. ✅ 환경 변수 검증 및 수정 (Frontend + Backend)
-2. ✅ 배포 설정 파일 생성 (vercel.json, render.yaml)
+2. ✅ 배포 설정 파일 생성 (render.yaml, render.yaml)
 3. ✅ .gitignore 업데이트
 4. ✅ 배포 스크립트 추가
 5. ✅ 1,000+ 라인 배포 가이드 작성
 6. ✅ 완료 보고서 작성
 
 **다음 단계**:
-1. Vercel/Render 계정 생성 및 GitHub 연동
+1. Render/Render 계정 생성 및 GitHub 연동
 2. 환경 변수 설정 (플랫폼 Dashboard)
 3. Git push 및 자동 배포
 4. 데이터베이스 마이그레이션
