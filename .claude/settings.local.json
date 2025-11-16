@@ -1,11 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add src/utils/coordinateParser.ts src/types/index.ts src/components/forms/PlaceFormModal.tsx src/components/detail/DateDetailView.tsx)",
-      "Bash(git add src/utils/dataSync.ts)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nFix: Automatic coordinate migration for existing places\n\nFixed map center defaulting to Seoul City Hall by migrating coordinates for all existing places from their map URLs.\n\nProblem:\n- Map always centered on Seoul City Hall (37.5665, 126.978)\n- Existing places added before coordinate extraction feature had no coordinates\n- MapView filters places without coordinates → validPlaces.length === 0\n- Map defaulted to Seoul because no valid places found\n\nRoot Cause:\n- Coordinate extraction only applied to newly added places\n- Existing places in localStorage had links but no coordinates field\n- MapView center calculation: validPlaces.length === 0 → default center\n- No migration path for existing data\n\nSolution:\n\nsrc/utils/dataSync.ts:\n- Created migrateCoordinates() function\n  - Iterates through all dates, regions, categories\n  - Checks each place for missing coordinates\n  - Extracts coordinates from existing map links\n  - Updates places with extracted coordinates\n  - Logs migration progress for debugging\n\n- Updated loadInitialData() flow:\n  1. Load from localStorage or JSON file\n  2. Apply data format migration (regions)\n  3. Apply coordinates migration (NEW)\n  4. Save migrated data back to localStorage\n\nMigration Logic:\n- Only processes places without coordinates\n- Preserves existing coordinates if present\n- Uses extractCoordinatesFromUrl() from coordinateParser\n- Handles cafe, restaurant, and spot categories\n- Logs each successful extraction\n\nBehavior After Fix:\n- On app startup, all existing places auto-migrate\n- Console shows: \"Extracted coordinates for 엘리제과자점: 37.XXXX, 126.XXXX\"\n- Console shows: \"Coordinates migration completed: N places updated\"\n- Map centers on average position of user''s places\n- No more Seoul City Hall default for dates with places\n- Future app loads use already-migrated coordinates (one-time migration)\n\nTechnical Details:\n- Migration runs on every loadInitialData() call\n- Idempotent: already-migrated places skip processing\n- Saves migrated data immediately to localStorage\n- No breaking changes to existing functionality\n- Compatible with places that couldn''t extract coordinates\n\nExample Migration Flow:\n1. User has 10 places with Kakao Map links, no coordinates\n2. App loads → migrateCoordinates() runs\n3. Extracts 10 coordinates successfully\n4. Saves to localStorage with coordinates\n5. MapView calculates center from 10 valid places\n6. Map centers on user''s actual locations\n\nBundle size: ~323KB (gzip: ~97KB)\nEOF\n)\")"
+      "Bash(npm run lint)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "notion",
+    "sequential-thinking"
+  ]
 }

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Kakao Maps API Test</title>
+</head>
+<body>
+    <h1>Kakao Maps API Test</h1>
+    <div id="map" style="width:100%;height:400px;"></div>
+
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ff76d41c3df3ea33d5547a24db77743c"></script>
+    <script>
+        console.log('Kakao object:', window.kakao);
+
+        if (window.kakao && window.kakao.maps) {
+            console.log('✓ Kakao Maps SDK loaded successfully');
+
+            var container = document.getElementById('map');
+            var options = {
+                center: new kakao.maps.LatLng(37.5665, 126.978),
+                level: 3
+            };
+
+            try {
+                var map = new kakao.maps.Map(container, options);
+                console.log('✓ Map created successfully');
+                document.body.insertAdjacentHTML('beforeend', '<p style="color: green;">✓ Kakao Maps API is working!</p>');
+            } catch (e) {
+                console.error('✗ Map creation failed:', e);
+                document.body.insertAdjacentHTML('beforeend', '<p style="color: red;">✗ Map creation failed: ' + e.message + '</p>');
+            }
+        } else {
+            console.error('✗ Kakao Maps SDK not loaded');
+            document.body.insertAdjacentHTML('beforeend', '<p style="color: red;">✗ Kakao Maps SDK not loaded</p>');
+        }
+    </script>
+</body>
+</html>

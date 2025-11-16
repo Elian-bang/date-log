@@ -15,7 +15,10 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "migrate": "tsx src/scripts/migrate-data.ts",
-    "migrate:execute": "tsx src/scripts/migrate-data.ts --execute"
+    "migrate:execute": "tsx src/scripts/migrate-data.ts --execute",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "date-fns": "^3.6.0",
@@ -27,6 +30,7 @@
     "serve": "^14.2.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
@@ -39,6 +43,7 @@
     "eslint": "^9.12.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.12",
+    "identity-obj-proxy": "^3.0.0",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "postcss": "^8.4.47",

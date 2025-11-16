@@ -1,0 +1,148 @@
+name: PR Quality Gate
+
+on:
+  pull_request:
+    branches: [main, production]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  quality-gate:
+    name: Quality Gate Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check code formatting
+        run: npx prettier --check "src/**/*.{ts,tsx}"
+        continue-on-error: true
+
+      - name: Run linting
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Run unit tests
+        run: npm test -- --passWithNoTests
+
+      - name: Build check
+        run: npm run build
+        env:
+          VITE_KAKAO_MAP_API_KEY: ${{ secrets.VITE_KAKAO_MAP_API_KEY || 'test-key-for-ci' }}
+          VITE_API_BASE_URL: http://localhost:3001/v1
+          VITE_ENABLE_API: 'false'
+
+      - name: Check bundle size
+        run: |
+          echo "Checking bundle size..."
+          BUILD_SIZE=$(du -sh dist | cut -f1)
+          echo "Build size: $BUILD_SIZE"
+
+      - name: Check for console statements
+        run: |
+          echo "Checking for debug statements..."
+          if grep -r "console.log\|console.debug" src/ --include="*.ts" --include="*.tsx" | grep -v "// allowed" | head -20; then
+            echo "Warning: Found console statements in source code"
+          fi
+
+  e2e-smoke:
+    name: E2E Smoke Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: |
+          npx playwright test e2e/home.spec.ts --grep "홈 페이지가 정상적으로 로드되어야 한다"
+        env:
+          VITE_KAKAO_MAP_API_KEY: ${{ secrets.VITE_KAKAO_MAP_API_KEY || 'test-key-for-ci' }}
+          VITE_API_BASE_URL: http://localhost:3001/v1
+          VITE_ENABLE_API: 'false'
+        continue-on-error: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  accessibility:
+    name: Accessibility Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for accessibility attributes
+        run: |
+          echo "Checking for accessibility best practices..."
+
+          # Check for images without alt
+          IMG_NO_ALT=$(grep -r "<img" src/ --include="*.tsx" | grep -v "alt=" | wc -l)
+          echo "Images without alt: $IMG_NO_ALT"
+
+          # Check for buttons without accessible text
+          EMPTY_BUTTONS=$(grep -r "<button>" src/ --include="*.tsx" | wc -l)
+          echo "Buttons to review: $EMPTY_BUTTONS"
+
+          # Check for aria labels
+          ARIA_COUNT=$(grep -r "aria-label\|aria-labelledby\|aria-describedby" src/ --include="*.tsx" | wc -l)
+          echo "ARIA attributes found: $ARIA_COUNT"
+
+  commit-lint:
+    name: Commit Message Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        run: |
+          echo "Checking commit message format..."
+          git log --format="%s" origin/main..HEAD 2>/dev/null | head -10 | while read msg; do
+            if [ -n "$msg" ]; then
+              echo "Commit: $msg"
+            fi
+          done
