@@ -8,7 +8,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { DateLogData, DateLog, CategoryType, Place, Restaurant } from '@/types';
 import { apiClient, DateLogAdapter, ApiClientError } from '@/services/api';
 import { DateEntryFilters } from '@/services/api/types';
-import { getApiConfig } from '@/services/config/api.config';
 import { logger } from '@/utils/logger';
 
 interface UseDateLogAPIReturn {
@@ -46,6 +45,7 @@ interface UseDateLogAPIReturn {
   // Utility operations
   refreshData: (filters?: DateEntryFilters) => Promise<void>;
   loadMonthData: (year: number, month: number) => Promise<void>;
+  revalidateDate: (date: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -79,7 +79,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
       const frontendData = DateLogAdapter.toFrontendModel(entries);
 
       setData(frontendData);
-      logger.info('Data loaded successfully', { entryCount: entries.length, filters });
+      logger.log('Data loaded successfully', { entryCount: entries.length, filters });
     } catch (err) {
       handleError(err, 'Failed to load data');
     } finally {
@@ -134,7 +134,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         return updated;
       });
 
-      logger.info('Date added successfully', { date, regionName });
+      logger.log('Date added successfully', { date, regionName });
     } catch (err) {
       // Rollback optimistic update
       setData((prev) => {
@@ -167,7 +167,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
       );
       await Promise.all(deletePromises);
 
-      logger.info('Date deleted successfully', { date });
+      logger.log('Date deleted successfully', { date });
     } catch (err) {
       // Rollback on error
       setData((prev) => ({
@@ -220,7 +220,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         return updated;
       });
 
-      logger.info('Region added successfully', { date, regionName });
+      logger.log('Region added successfully', { date, regionName });
     } catch (err) {
       // Rollback optimistic update
       setData((prev) => ({
@@ -258,7 +258,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
       // API call
       await apiClient.updateDateEntry(regionId, { region: newName });
 
-      logger.info('Region name updated successfully', { date, regionId, newName });
+      logger.log('Region name updated successfully', { date, regionId, newName });
     } catch (err) {
       // Rollback on error
       setData((prev) => ({
@@ -296,7 +296,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
       // API call
       await apiClient.deleteDateEntry(regionId);
 
-      logger.info('Region deleted successfully', { date, regionId });
+      logger.log('Region deleted successfully', { date, regionId });
     } catch (err) {
       // Rollback on error
       setData((prev) => ({
@@ -386,7 +386,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      logger.info('Place added successfully', { date, regionId, category });
+      logger.log('Place added successfully', { date, regionId, category });
     } catch (err) {
       // Rollback optimistic update
       setData((prev) => ({
@@ -461,7 +461,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         await apiClient.updateSpot(placeId, updates as any);
       }
 
-      logger.info('Place updated successfully', { date, regionId, category, placeId });
+      logger.log('Place updated successfully', { date, regionId, category, placeId });
     } catch (err) {
       // Rollback on error
       setData((prev) => ({
@@ -535,7 +535,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         await apiClient.deleteSpot(placeId);
       }
 
-      logger.info('Place deleted successfully', { date, regionId, category, placeId });
+      logger.log('Place deleted successfully', { date, regionId, category, placeId });
     } catch (err) {
       // Rollback on error
       setData((prev) => ({
@@ -615,7 +615,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         await apiClient.updateSpot(placeId, { visited: !oldVisited });
       }
 
-      logger.info('Visited status toggled successfully', { date, regionId, category, placeId });
+      logger.log('Visited status toggled successfully', { date, regionId, category, placeId });
     } catch (err) {
       // Rollback on error
       setData((prev) => ({
@@ -655,6 +655,14 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
     await loadData({ startDate, endDate });
   }, [loadData]);
 
+  const revalidateDate = useCallback(async (date: string) => {
+    // Parse the date to get start and end of the specific day
+    const startDate = date;
+    const endDate = date;
+
+    await loadData({ startDate, endDate });
+  }, [loadData]);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -675,6 +683,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
     toggleVisited,
     refreshData,
     loadMonthData,
+    revalidateDate,
     clearError,
   };
 };

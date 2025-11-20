@@ -289,7 +289,7 @@ export class ApiClient {
    * Get all date entries with optional filters
    */
   async getDateEntries(filters?: DateEntryFilters): Promise<DateEntryResponse[]> {
-    return this.get<DateEntryResponse[]>('/dates', filters);
+    return this.get<DateEntryResponse[]>('/dates', filters as Record<string, string | number | boolean | undefined>);
   }
 
   /**

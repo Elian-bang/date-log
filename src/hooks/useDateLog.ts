@@ -11,7 +11,7 @@ import { logger } from '@/utils/logger';
 interface UseDateLogReturn {
   data: DateLogData;
   loading: boolean;
-  error: Error | null;
+  error: string | null;
 
   // Date operations
   addDate: (date: string, regionName: string) => void;
@@ -33,12 +33,14 @@ interface UseDateLogReturn {
   resetToDefault: () => Promise<void>;
   refreshData: () => Promise<void>;
   loadMonthData?: (year: number, month: number) => Promise<void>;
+  revalidateDate?: (date: string) => Promise<void>;
+  clearError: () => void;
 }
 
 export const useDateLog = (): UseDateLogReturn => {
   const [data, setData] = useState<DateLogData>({});
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Load initial data on mount
   useEffect(() => {
@@ -49,7 +51,8 @@ export const useDateLog = (): UseDateLogReturn => {
         setData(initialData);
         setError(null);
       } catch (err) {
-        setError(err as Error);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        setError(errorMessage);
         logger.error('Failed to load initial data:', err);
       } finally {
         setLoading(false);
@@ -290,7 +293,8 @@ export const useDateLog = (): UseDateLogReturn => {
       setData(freshData);
       setError(null);
     } catch (err) {
-      setError(err as Error);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
       console.error('Failed to reset data:', err);
     } finally {
       setLoading(false);
@@ -304,11 +308,16 @@ export const useDateLog = (): UseDateLogReturn => {
       setData(refreshedData);
       setError(null);
     } catch (err) {
-      setError(err as Error);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
       console.error('Failed to refresh data:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   return {
@@ -327,5 +336,6 @@ export const useDateLog = (): UseDateLogReturn => {
     toggleVisited,
     resetToDefault,
     refreshData,
+    clearError,
   };
 };

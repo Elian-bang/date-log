@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiArrowLeft, FiPlus, FiMap } from 'react-icons/fi';
 import { useDateLogHybrid } from '@/hooks';
@@ -31,6 +31,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     loading,
     error,
     refreshData,
+    revalidateDate,
     clearError,
   } = useDateLogHybrid();
 
@@ -47,6 +48,13 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
   } | null>(null);
   const [deleteRegionConfirm, setDeleteRegionConfirm] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
+
+  // Revalidate date data from backend when dateId changes
+  useEffect(() => {
+    if (dateId && revalidateDate) {
+      revalidateDate(dateId);
+    }
+  }, [dateId, revalidateDate]);
 
   // Get date log data (must be called before any conditional returns)
   const dateLog = dateId ? getDateLog(dateId) : undefined;

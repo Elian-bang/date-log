@@ -6,7 +6,6 @@
 import type {
   DateLogData,
   DateLog,
-  RegionSection,
   Cafe,
   Restaurant,
   Spot,
