@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DateLogData, DateLog, CategoryType, Place, Restaurant } from '@/types';
 import { apiClient, DateLogAdapter, ApiClientError } from '@/services/api';
+import { DateEntryFilters } from '@/services/api/types';
 import { getApiConfig } from '@/services/config/api.config';
 import { logger } from '@/utils/logger';
 
@@ -43,7 +44,8 @@ interface UseDateLogAPIReturn {
   toggleVisited: (date: string, regionId: string, category: CategoryType, placeId: string) => Promise<void>;
 
   // Utility operations
-  refreshData: () => Promise<void>;
+  refreshData: (filters?: DateEntryFilters) => Promise<void>;
+  loadMonthData: (year: number, month: number) => Promise<void>;
   clearError: () => void;
 }
 
@@ -67,17 +69,17 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
     logger.error(`${context}:`, err);
   }, []);
 
-  // Load all data from API
-  const loadData = useCallback(async () => {
+  // Load data from API with optional filters
+  const loadData = useCallback(async (filters?: DateEntryFilters) => {
     try {
       setLoading(true);
       setError(null);
 
-      const entries = await apiClient.getDateEntries();
+      const entries = await apiClient.getDateEntries(filters);
       const frontendData = DateLogAdapter.toFrontendModel(entries);
 
       setData(frontendData);
-      logger.info('Data loaded successfully', { entryCount: entries.length });
+      logger.info('Data loaded successfully', { entryCount: entries.length, filters });
     } catch (err) {
       handleError(err, 'Failed to load data');
     } finally {
@@ -85,9 +87,17 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
     }
   }, [handleError]);
 
-  // Initialize data on mount
+  // Initialize data on mount - load current month only
   useEffect(() => {
-    loadData();
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 0-indexed, so add 1
+
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    loadData({ startDate, endDate });
   }, [loadData]);
 
   // Date operations
@@ -633,8 +643,16 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
   }, [data, handleError]);
 
   // Utility operations
-  const refreshData = useCallback(async () => {
-    await loadData();
+  const refreshData = useCallback(async (filters?: DateEntryFilters) => {
+    await loadData(filters);
+  }, [loadData]);
+
+  const loadMonthData = useCallback(async (year: number, month: number) => {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    await loadData({ startDate, endDate });
   }, [loadData]);
 
   const clearError = useCallback(() => {
@@ -656,6 +674,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
     deletePlace,
     toggleVisited,
     refreshData,
+    loadMonthData,
     clearError,
   };
 };

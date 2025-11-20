@@ -32,6 +32,7 @@ interface UseDateLogReturn {
   // Utility operations
   resetToDefault: () => Promise<void>;
   refreshData: () => Promise<void>;
+  loadMonthData?: (year: number, month: number) => Promise<void>;
 }
 
 export const useDateLog = (): UseDateLogReturn => {
