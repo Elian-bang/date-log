@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiArrowLeft, FiPlus, FiMap } from 'react-icons/fi';
-import { useDateLogHybrid } from '@/hooks';
+import { useDateLogAPI } from '@/hooks';
 import { LoadingSpinner, ErrorMessage } from '@/components/common';
 import { formatDateForDisplay } from '@/utils/dateUtils';
 import { CategoryType, PlaceFormData, Place, Restaurant } from '@/types';
@@ -33,7 +33,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     refreshData,
     revalidateDate,
     clearError,
-  } = useDateLogHybrid();
+  } = useDateLogAPI();
 
   const [isPlaceFormOpen, setIsPlaceFormOpen] = useState(false);
   const [currentRegionId, setCurrentRegionId] = useState<string>('');

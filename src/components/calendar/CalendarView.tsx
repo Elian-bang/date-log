@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiPlus } from 'react-icons/fi';
-import { useDateLogHybrid } from '@/hooks';
+import { useDateLogAPI } from '@/hooks';
 import { LoadingSpinner, ErrorMessage } from '@/components/common';
 import { getPreviousMonth, getNextMonth } from '@/utils/dateUtils';
 import { CalendarHeader } from './CalendarHeader';
@@ -14,7 +14,7 @@ import { AddDateModal } from './AddDateModal';
  */
 export const CalendarView = () => {
   const navigate = useNavigate();
-  const { data, loading, error, addDate, refreshData, loadMonthData, clearError } = useDateLogHybrid();
+  const { data, loading, error, addDate, refreshData, loadMonthData, clearError } = useDateLogAPI();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 

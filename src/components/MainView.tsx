@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiPlus, FiArrowUp } from 'react-icons/fi';
-import { useDateLog } from '@/hooks/useDateLog';
+import { useDateLogAPI } from '@/hooks';
 import { getPreviousMonth, getNextMonth } from '@/utils/dateUtils';
 import { CalendarHeader } from './calendar/CalendarHeader';
 import { CalendarGrid } from './calendar/CalendarGrid';
@@ -15,7 +15,7 @@ import { DateDetailView } from './detail/DateDetailView';
 export const MainView = () => {
   const { dateId } = useParams<{ dateId?: string }>();
   const navigate = useNavigate();
-  const { data, loading, addDate } = useDateLog();
+  const { data, loading, addDate } = useDateLogAPI();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedDateForModal, setSelectedDateForModal] = useState<string | undefined>(undefined);
