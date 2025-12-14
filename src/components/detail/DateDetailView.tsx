@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiArrowLeft, FiPlus, FiMap } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus, FiMap, FiTrash2 } from 'react-icons/fi';
 import { useDateLogAPI } from '@/hooks';
 import { LoadingSpinner, ErrorMessage } from '@/components/common';
 import { formatDateForDisplay } from '@/utils/dateUtils';
@@ -21,6 +21,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
   const { dateId } = useParams<{ dateId: string }>();
   const {
     getDateLog,
+    deleteDate,
     addRegion,
     updateRegionName,
     deleteRegion,
@@ -47,6 +48,7 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     placeId: string;
   } | null>(null);
   const [deleteRegionConfirm, setDeleteRegionConfirm] = useState<string | null>(null);
+  const [deleteDateConfirm, setDeleteDateConfirm] = useState(false);
   const [showMap, setShowMap] = useState(false);
 
   // Revalidate date data from backend when dateId changes
@@ -216,6 +218,28 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     }
   };
 
+  const handleDeleteDate = () => {
+    setDeleteDateConfirm(true);
+  };
+
+  const confirmDeleteDate = async () => {
+    if (!dateId) return;
+
+    try {
+      await deleteDate(dateId);
+      setDeleteDateConfirm(false);
+      // Navigate back to calendar after successful deletion
+      if (onBackToCalendar) {
+        onBackToCalendar();
+      } else {
+        window.history.back();
+      }
+    } catch (err) {
+      console.error('Failed to delete date:', err);
+      setDeleteDateConfirm(false);
+    }
+  };
+
   // Calculate total regions and places
   const totalRegions = dateLog.regions.length;
   const totalPlaces = dateLog.regions.reduce(
@@ -251,6 +275,14 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleDeleteDate}
+                className="flex items-center gap-1 px-3 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm min-h-[44px]"
+                title="이 날짜 삭제"
+              >
+                <FiTrash2 className="w-4 h-4" />
+                <span className="hidden sm:inline">삭제</span>
+              </button>
               <button
                 onClick={() => setShowMap(!showMap)}
                 className={`flex items-center gap-1 px-3 py-2.5 rounded-lg transition-colors text-sm min-h-[44px] ${
@@ -411,6 +443,41 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Date Confirmation */}
+      {deleteDateConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">⚠️ 날짜 삭제</h3>
+            <p className="text-gray-600 mb-2">
+              <strong>{dateLog.date}</strong> 날짜 전체를 삭제하시겠습니까?
+            </p>
+            <p className="text-sm text-red-600 mb-1">
+              • 모든 지역 ({totalRegions}개)
+            </p>
+            <p className="text-sm text-red-600 mb-1">
+              • 모든 장소 ({totalPlaces}개)
+            </p>
+            <p className="text-sm font-bold text-red-700 mb-6">
+              이 작업은 되돌릴 수 없습니다!
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteDateConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmDeleteDate}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-bold"
+              >
+                완전 삭제
               </button>
             </div>
           </div>

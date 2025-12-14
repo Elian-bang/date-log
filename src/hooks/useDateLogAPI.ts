@@ -656,12 +656,31 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
   }, [loadData]);
 
   const revalidateDate = useCallback(async (date: string) => {
-    // Parse the date to get start and end of the specific day
-    const startDate = date;
-    const endDate = date;
+    try {
+      setLoading(true);
+      setError(null);
 
-    await loadData({ startDate, endDate });
-  }, [loadData]);
+      // Use dedicated single-date API instead of date range filter
+      const entries = await apiClient.getDateEntries({
+        startDate: date,
+        endDate: date
+      });
+
+      // Update only this specific date in state
+      const frontendData = DateLogAdapter.toFrontendModel(entries);
+
+      setData((prev) => ({
+        ...prev,
+        ...frontendData,
+      }));
+
+      logger.log('Date revalidated successfully', { date });
+    } catch (err) {
+      handleError(err, 'Failed to revalidate date');
+    } finally {
+      setLoading(false);
+    }
+  }, [handleError]);
 
   const clearError = useCallback(() => {
     setError(null);
