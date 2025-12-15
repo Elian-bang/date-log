@@ -81,8 +81,9 @@ export class DateLogAdapter {
 
   /**
    * Transform backend Cafe to frontend Cafe
+   * Public for use in hooks when processing API responses
    */
-  private static toCafe(cafe: CafeResponse): Cafe {
+  public static toCafe(cafe: CafeResponse): Cafe {
     return {
       id: cafe.id,
       name: cafe.name,
@@ -96,8 +97,9 @@ export class DateLogAdapter {
 
   /**
    * Transform backend Restaurant to frontend Restaurant
+   * Public for use in hooks when processing API responses
    */
-  private static toRestaurant(restaurant: RestaurantResponse): Restaurant {
+  public static toRestaurant(restaurant: RestaurantResponse): Restaurant {
     return {
       id: restaurant.id,
       name: restaurant.name,
@@ -112,8 +114,9 @@ export class DateLogAdapter {
 
   /**
    * Transform backend Spot to frontend Spot
+   * Public for use in hooks when processing API responses
    */
-  private static toSpot(spot: SpotResponse): Spot {
+  public static toSpot(spot: SpotResponse): Spot {
     return {
       id: spot.id,
       name: spot.name,

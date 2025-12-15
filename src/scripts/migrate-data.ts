@@ -12,9 +12,16 @@
 
 import fs from 'fs';
 import path from 'path';
-import { apiClient } from '../services/api/client';
+import { ApiClient } from '../services/api/client';
 import { DateLogAdapter } from '../services/api/adapter';
 import type { DateLogData, DateLog } from '../types';
+
+// TEMPORARY: Create API client with production URL for migration
+const PRODUCTION_API_URL = 'https://date-log-back.onrender.com/v1';
+const apiClient = new ApiClient();
+// Override baseURL after instantiation
+(apiClient as any).baseURL = PRODUCTION_API_URL;
+(apiClient as any).timeout = 30000;
 
 // ANSI color codes for terminal output
 const colors = {
