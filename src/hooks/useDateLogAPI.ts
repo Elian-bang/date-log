@@ -4,7 +4,7 @@
  * Features: API calls, optimistic updates, error handling, loading states
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { DateLogData, DateLog, CategoryType, Place, Restaurant } from '@/types';
 import { apiClient, DateLogAdapter, ApiClientError } from '@/services/api';
 import { DateEntryFilters } from '@/services/api/types';
@@ -54,6 +54,9 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Phase 2: Smart Caching - Track loaded months to prevent duplicate API calls
+  const loadedMonthsRef = useRef(new Set<string>());
+
   // Helper: Find region name by ID
   const findRegionNameById = useCallback((date: string, regionId: string): string | undefined => {
     const dateLog = data[date];
@@ -76,29 +79,21 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
       setError(null);
 
       const entries = await apiClient.getDateEntries(filters);
-      const frontendData = DateLogAdapter.toFrontendModel(entries);
 
-      setData(frontendData);
-      logger.log('Data loaded successfully', { entryCount: entries.length, filters });
+      // Merge new data with existing data instead of replacing
+      setData(prev => DateLogAdapter.mergeDateLogData(prev, entries));
+
+      logger.log('Data loaded successfully', {
+        entryCount: entries.length,
+        filters,
+        action: 'merge'
+      });
     } catch (err) {
       handleError(err, 'Failed to load data');
     } finally {
       setLoading(false);
     }
   }, [handleError]);
-
-  // Initialize data on mount - load current month only
-  useEffect(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // 0-indexed, so add 1
-
-    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
-    loadData({ startDate, endDate });
-  }, [loadData]);
 
   // Date operations
   const addDate = useCallback(async (date: string, regionName: string) => {
@@ -134,7 +129,12 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         return updated;
       });
 
-      logger.log('Date added successfully', { date, regionName });
+      // Phase 2: Invalidate cache for this month
+      const dateObj = new Date(date);
+      const key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+      loadedMonthsRef.current.delete(key);
+
+      logger.log('Date added successfully', { date, regionName, cacheInvalidated: key });
     } catch (err) {
       // Rollback optimistic update
       setData((prev) => {
@@ -167,7 +167,12 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
       );
       await Promise.all(deletePromises);
 
-      logger.log('Date deleted successfully', { date });
+      // Phase 2: Invalidate cache for this month
+      const dateObj = new Date(date);
+      const key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+      loadedMonthsRef.current.delete(key);
+
+      logger.log('Date deleted successfully', { date, cacheInvalidated: key });
     } catch (err) {
       // Rollback on error
       setData((prev) => ({
@@ -187,11 +192,13 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
   const addRegion = useCallback(async (date: string, regionName: string) => {
     if (!data[date]) return;
 
+    // Generate tempId outside try block so it's accessible in catch
+    const tempId = `temp-${Date.now()}`;
+
     try {
       setError(null);
 
       // Optimistic update
-      const tempId = `temp-${Date.now()}`;
       setData((prev) => ({
         ...prev,
         [date]: {
@@ -220,14 +227,19 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         return updated;
       });
 
-      logger.log('Region added successfully', { date, regionName });
+      // Phase 2: Invalidate cache for this month
+      const dateObj = new Date(date);
+      const key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+      loadedMonthsRef.current.delete(key);
+
+      logger.log('Region added successfully', { date, regionName, cacheInvalidated: key });
     } catch (err) {
       // Rollback optimistic update
       setData((prev) => ({
         ...prev,
         [date]: {
           ...prev[date],
-          regions: prev[date].regions.filter(r => r.id !== `temp-${Date.now()}`),
+          regions: prev[date].regions.filter(r => r.id !== tempId),
         },
       }));
       handleError(err, 'Failed to add region');
@@ -296,7 +308,12 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
       // API call
       await apiClient.deleteDateEntry(regionId);
 
-      logger.log('Region deleted successfully', { date, regionId });
+      // Phase 2: Invalidate cache for this month
+      const dateObj = new Date(date);
+      const key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+      loadedMonthsRef.current.delete(key);
+
+      logger.log('Region deleted successfully', { date, regionId, cacheInvalidated: key });
     } catch (err) {
       // Rollback on error
       setData((prev) => ({
@@ -320,13 +337,14 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
   ) => {
     if (!data[date]) return;
 
+    // Generate tempId outside try block so it's accessible in catch
+    const tempId = `temp-${Date.now()}`;
+    const tempPlace = { ...place, id: tempId } as Place | Restaurant;
+
     try {
       setError(null);
 
       // Optimistic update
-      const tempId = `temp-${Date.now()}`;
-      const tempPlace = { ...place, id: tempId } as Place | Restaurant;
-
       setData((prev) => ({
         ...prev,
         [date]: {
@@ -345,20 +363,20 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      // API call
-      let newPlace;
-      const placeData = category === 'restaurant'
-        ? DateLogAdapter.toBackendRestaurant(place as Restaurant)
-        : category === 'cafe'
-        ? DateLogAdapter.toBackendCafe(place as Place)
-        : DateLogAdapter.toBackendSpot(place as Place);
-
+      // API call - properly typed for each category
+      let frontendPlace;
       if (category === 'cafe') {
-        newPlace = await apiClient.createCafe(regionId, placeData);
+        const placeData = DateLogAdapter.toBackendCafe(place as Place);
+        const newPlace = await apiClient.createCafe(regionId, placeData);
+        frontendPlace = DateLogAdapter.toCafe(newPlace);
       } else if (category === 'restaurant') {
-        newPlace = await apiClient.createRestaurant(regionId, placeData);
+        const placeData = DateLogAdapter.toBackendRestaurant(place as Restaurant);
+        const newPlace = await apiClient.createRestaurant(regionId, placeData);
+        frontendPlace = DateLogAdapter.toRestaurant(newPlace);
       } else {
-        newPlace = await apiClient.createSpot(regionId, placeData);
+        const placeData = DateLogAdapter.toBackendSpot(place as Place);
+        const newPlace = await apiClient.createSpot(regionId, placeData);
+        frontendPlace = DateLogAdapter.toSpot(newPlace);
       }
 
       // Update with real data
@@ -373,11 +391,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
                   categories: {
                     ...region.categories,
                     [category]: region.categories[category].map(p =>
-                      p.id === tempId
-                        ? (category === 'cafe' ? DateLogAdapter['toCafe'](newPlace as any) :
-                           category === 'restaurant' ? DateLogAdapter['toRestaurant'](newPlace as any) :
-                           DateLogAdapter['toSpot'](newPlace as any))
-                        : p
+                      p.id === tempId ? frontendPlace : p
                     ),
                   },
                 }
@@ -399,7 +413,7 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
                   ...region,
                   categories: {
                     ...region.categories,
-                    [category]: region.categories[category].filter(p => !p.id.startsWith('temp-')),
+                    [category]: region.categories[category].filter(p => p.id !== tempId),
                   },
                 }
               : region
@@ -644,15 +658,31 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
 
   // Utility operations
   const refreshData = useCallback(async (filters?: DateEntryFilters) => {
+    // Phase 2: Clear all cache before refreshing data
+    loadedMonthsRef.current.clear();
+    logger.log('Cache cleared for refresh');
+
     await loadData(filters);
   }, [loadData]);
 
   const loadMonthData = useCallback(async (year: number, month: number) => {
+    const key = `${year}-${String(month).padStart(2, '0')}`;
+
+    // Phase 2: Cache hit check - skip API call if month already loaded
+    if (loadedMonthsRef.current.has(key)) {
+      logger.log('Month data cache hit', { year, month, key });
+      return; // Early return - 0ms response
+    }
+
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
     await loadData({ startDate, endDate });
+
+    // Phase 2: Cache the loaded month
+    loadedMonthsRef.current.add(key);
+    logger.log('Month data cached', { year, month, key });
   }, [loadData]);
 
   const revalidateDate = useCallback(async (date: string) => {
