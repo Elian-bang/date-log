@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiPlus, FiArrowUp } from 'react-icons/fi';
 import { useDateLogAPI } from '@/hooks';
@@ -61,42 +61,42 @@ export const MainView = () => {
   }, [currentMonth, loadMonthData]);
 
   // Month navigation handlers
-  const handlePreviousMonth = () => {
-    setCurrentMonth(getPreviousMonth(currentMonth));
-  };
+  const handlePreviousMonth = useCallback(() => {
+    setCurrentMonth(prev => getPreviousMonth(prev));
+  }, []);
 
-  const handleNextMonth = () => {
-    setCurrentMonth(getNextMonth(currentMonth));
-  };
+  const handleNextMonth = useCallback(() => {
+    setCurrentMonth(prev => getNextMonth(prev));
+  }, []);
 
   // Date click handler
-  const handleDateClick = (dateString: string) => {
+  const handleDateClick = useCallback((dateString: string) => {
     if (data[dateString]) {
       navigate(`/date/${dateString}`);
     } else {
       setSelectedDateForModal(dateString);
       setIsAddModalOpen(true);
     }
-  };
+  }, [data, navigate]);
 
   // Add new date handler
-  const handleAddDate = (date: string, region: string) => {
+  const handleAddDate = useCallback((date: string, region: string) => {
     addDate(date, region);
     // Wait for state update to complete before navigating
     setTimeout(() => {
       navigate(`/date/${date}`);
     }, 0);
-  };
+  }, [addDate, navigate]);
 
   // Scroll to calendar section
-  const scrollToCalendar = () => {
+  const scrollToCalendar = useCallback(() => {
     navigate('/');
-  };
+  }, [navigate]);
 
   // Scroll to top
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
 
   // Loading state
   if (loading) {
