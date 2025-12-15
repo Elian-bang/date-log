@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FiPlus, FiArrowUp } from 'react-icons/fi';
 import { useDateLogAPI } from '@/hooks';
 import { getPreviousMonth, getNextMonth } from '@/utils/dateUtils';
+import { throttle } from '@/utils/performance';
 import { CalendarHeader } from './calendar/CalendarHeader';
 import { CalendarGrid } from './calendar/CalendarGrid';
 import { AddDateModal } from './calendar/AddDateModal';
@@ -15,7 +16,7 @@ import { DateDetailView } from './detail/DateDetailView';
 export const MainView = () => {
   const { dateId } = useParams<{ dateId?: string }>();
   const navigate = useNavigate();
-  const { data, loading, addDate } = useDateLogAPI();
+  const { data, loading, addDate, loadMonthData } = useDateLogAPI();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedDateForModal, setSelectedDateForModal] = useState<string | undefined>(undefined);
@@ -40,15 +41,24 @@ export const MainView = () => {
     }
   }, [dateId]);
 
-  // Handle scroll to show/hide scroll-to-top button
+  // Handle scroll to show/hide scroll-to-top button (throttled for performance)
   useEffect(() => {
-    const handleScroll = () => {
+    const handleScroll = throttle(() => {
       setShowScrollTop(window.scrollY > 400);
-    };
+    }, 100); // Throttle to 100ms (10 times per second max)
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Load month data when currentMonth changes
+  useEffect(() => {
+    if (loadMonthData) {
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth() + 1; // 0-indexed, so add 1
+      loadMonthData(year, month);
+    }
+  }, [currentMonth, loadMonthData]);
 
   // Month navigation handlers
   const handlePreviousMonth = () => {

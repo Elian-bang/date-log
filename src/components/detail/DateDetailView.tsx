@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiArrowLeft, FiPlus, FiMap, FiTrash2 } from 'react-icons/fi';
 import { useDateLogAPI } from '@/hooks';
@@ -126,15 +126,15 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
   }
 
   // Place CRUD handlers
-  const handleAddPlace = (regionId: string, category: CategoryType) => {
+  const handleAddPlace = useCallback((regionId: string, category: CategoryType) => {
     setCurrentRegionId(regionId);
     setCurrentCategory(category);
     setEditingPlace(null);
     setIsPlaceFormOpen(true);
-  };
+  }, []);
 
-  const handleEditPlace = (regionId: string, category: CategoryType, placeId: string) => {
-    const region = dateLog.regions.find((r) => r.id === regionId);
+  const handleEditPlace = useCallback((regionId: string, category: CategoryType, placeId: string) => {
+    const region = dateLog?.regions.find((r) => r.id === regionId);
     if (!region) return;
 
     const place = region.categories[category].find((p) => p.id === placeId);
@@ -144,14 +144,14 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
       setEditingPlace(place);
       setIsPlaceFormOpen(true);
     }
-  };
+  }, [dateLog]);
 
-  const handleDeletePlace = (regionId: string, category: CategoryType, placeId: string) => {
+  const handleDeletePlace = useCallback((regionId: string, category: CategoryType, placeId: string) => {
     setDeleteConfirm({ regionId, category, placeId });
-  };
+  }, []);
 
-  const confirmDeletePlace = async () => {
-    if (deleteConfirm) {
+  const confirmDeletePlace = useCallback(async () => {
+    if (deleteConfirm && dateId) {
       try {
         await deletePlace(dateId, deleteConfirm.regionId, deleteConfirm.category, deleteConfirm.placeId);
         setDeleteConfirm(null);
@@ -159,9 +159,11 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
         console.error('Failed to delete place:', err);
       }
     }
-  };
+  }, [deleteConfirm, dateId, deletePlace]);
 
-  const handlePlaceFormSubmit = async (data: PlaceFormData) => {
+  const handlePlaceFormSubmit = useCallback(async (data: PlaceFormData) => {
+    if (!dateId) return;
+
     try {
       if (editingPlace) {
         // Update existing place
@@ -188,11 +190,11 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     } catch (err) {
       console.error('Failed to save place:', err);
     }
-  };
+  }, [dateId, editingPlace, currentRegionId, currentCategory, updatePlace, addPlace]);
 
   // Region management handlers
-  const handleAddRegion = async () => {
-    if (newRegionName.trim()) {
+  const handleAddRegion = useCallback(async () => {
+    if (newRegionName.trim() && dateId) {
       try {
         await addRegion(dateId, newRegionName.trim());
         setNewRegionName('');
@@ -201,14 +203,14 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
         console.error('Failed to add region:', err);
       }
     }
-  };
+  }, [newRegionName, dateId, addRegion]);
 
-  const handleDeleteRegion = (regionId: string) => {
+  const handleDeleteRegion = useCallback((regionId: string) => {
     setDeleteRegionConfirm(regionId);
-  };
+  }, []);
 
-  const confirmDeleteRegion = async () => {
-    if (deleteRegionConfirm) {
+  const confirmDeleteRegion = useCallback(async () => {
+    if (deleteRegionConfirm && dateId) {
       try {
         await deleteRegion(dateId, deleteRegionConfirm);
         setDeleteRegionConfirm(null);
@@ -216,13 +218,13 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
         console.error('Failed to delete region:', err);
       }
     }
-  };
+  }, [deleteRegionConfirm, dateId, deleteRegion]);
 
-  const handleDeleteDate = () => {
+  const handleDeleteDate = useCallback(() => {
     setDeleteDateConfirm(true);
-  };
+  }, []);
 
-  const confirmDeleteDate = async () => {
+  const confirmDeleteDate = useCallback(async () => {
     if (!dateId) return;
 
     try {
@@ -238,18 +240,21 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
       console.error('Failed to delete date:', err);
       setDeleteDateConfirm(false);
     }
-  };
+  }, [dateId, deleteDate, onBackToCalendar]);
 
-  // Calculate total regions and places
-  const totalRegions = dateLog.regions.length;
-  const totalPlaces = dateLog.regions.reduce(
-    (sum, region) =>
-      sum +
-      region.categories.cafe.length +
-      region.categories.restaurant.length +
-      region.categories.spot.length,
-    0
-  );
+  // Calculate total regions and places with useMemo
+  const totalRegions = useMemo(() => dateLog?.regions.length ?? 0, [dateLog]);
+  const totalPlaces = useMemo(() => {
+    if (!dateLog) return 0;
+    return dateLog.regions.reduce(
+      (sum, region) =>
+        sum +
+        region.categories.cafe.length +
+        region.categories.restaurant.length +
+        region.categories.spot.length,
+      0
+    );
+  }, [dateLog]);
 
   return (
     <div className="bg-gray-50">

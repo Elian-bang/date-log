@@ -2,7 +2,7 @@ import { FiPlus } from 'react-icons/fi';
 import { CategoryType, Place, Restaurant, RestaurantType } from '@/types';
 import { CATEGORY_CONFIG, RESTAURANT_TYPES } from '@/utils/constants';
 import { PlaceCard } from './PlaceCard';
-import { useState } from 'react';
+import { useState, memo } from 'react';
 
 interface CategorySectionProps {
   category: CategoryType;
@@ -16,8 +16,9 @@ interface CategorySectionProps {
 /**
  * Category Section Component
  * Displays category header and horizontal scrolling place cards
+ * Optimized with React.memo to prevent unnecessary re-renders
  */
-export const CategorySection = ({
+export const CategorySection = memo(({
   category,
   places,
   onAddPlace,
@@ -115,4 +116,6 @@ export const CategorySection = ({
       )}
     </div>
   );
-};
+});
+
+CategorySection.displayName = 'CategorySection';

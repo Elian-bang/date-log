@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiPlus } from 'react-icons/fi';
 import { useDateLogAPI } from '@/hooks';
@@ -28,16 +28,16 @@ export const CalendarView = () => {
   }, [currentMonth, loadMonthData]);
 
   // Month navigation handlers
-  const handlePreviousMonth = () => {
+  const handlePreviousMonth = useCallback(() => {
     setCurrentMonth(getPreviousMonth(currentMonth));
-  };
+  }, [currentMonth]);
 
-  const handleNextMonth = () => {
+  const handleNextMonth = useCallback(() => {
     setCurrentMonth(getNextMonth(currentMonth));
-  };
+  }, [currentMonth]);
 
   // Date click handler
-  const handleDateClick = (dateString: string) => {
+  const handleDateClick = useCallback((dateString: string) => {
     // If date has log, navigate to detail view
     if (data[dateString]) {
       navigate(`/date/${dateString}`);
@@ -45,10 +45,10 @@ export const CalendarView = () => {
       // If no log, open add modal with this date pre-selected
       setIsAddModalOpen(true);
     }
-  };
+  }, [data, navigate]);
 
   // Add new date handler
-  const handleAddDate = async (date: string, region: string) => {
+  const handleAddDate = useCallback(async (date: string, region: string) => {
     try {
       await addDate(date, region);
       // Navigate to the newly created date
@@ -57,7 +57,10 @@ export const CalendarView = () => {
       // Error is handled by the hook, but we can add additional logic here if needed
       console.error('Failed to add date:', err);
     }
-  };
+  }, [addDate, navigate]);
+
+  // Computed value: total dates count
+  const totalDates = useMemo(() => Object.keys(data).length, [data]);
 
   // Loading state
   if (loading) {
@@ -93,7 +96,7 @@ export const CalendarView = () => {
         {/* Stats */}
         <div className="mb-6 text-center">
           <p className="text-gray-600">
-            총 <span className="font-bold text-primary">{Object.keys(data).length}</span>개의 데이트 기록
+            총 <span className="font-bold text-primary">{totalDates}</span>개의 데이트 기록
           </p>
         </div>
 

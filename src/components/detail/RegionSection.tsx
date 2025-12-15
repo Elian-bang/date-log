@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo, useMemo } from 'react';
 import { FiEdit2, FiCheck, FiTrash2, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { CategoryType, RegionSection as RegionSectionType } from '@/types';
 import { CategorySection } from './CategorySection';
@@ -18,8 +18,9 @@ interface RegionSectionProps {
 /**
  * Region Section Component
  * Displays a region with its categories (collapsible)
+ * Optimized with React.memo to prevent unnecessary re-renders
  */
-export const RegionSection = ({
+export const RegionSection = memo(({
   dateId: _, // Reserved for future use
   region,
   onUpdateRegionName,
@@ -46,11 +47,13 @@ export const RegionSection = ({
     setIsEditing(false);
   };
 
-  // Count total places in this region
-  const totalPlaces =
+  // Count total places in this region with useMemo
+  const totalPlaces = useMemo(() =>
     region.categories.cafe.length +
     region.categories.restaurant.length +
-    region.categories.spot.length;
+    region.categories.spot.length,
+    [region.categories]
+  );
 
   return (
     <div className="bg-gradient-to-r from-primary-light/10 to-primary/10 rounded-xl p-4 mb-6 border border-primary/20">
@@ -164,4 +167,6 @@ export const RegionSection = ({
       )}
     </div>
   );
-};
+});
+
+RegionSection.displayName = 'RegionSection';
