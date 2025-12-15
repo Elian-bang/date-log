@@ -198,12 +198,13 @@ describe('테스트 인프라 검증', () => {
     });
 
     it('getRelativeDate should calculate relative dates', () => {
-      const today = new Date('2025-10-18');
-      const yesterday = new Date('2025-10-17');
-      const tomorrow = new Date('2025-10-19');
+      const today = new Date('2025-10-18T00:00:00.000Z');
+      const yesterday = new Date('2025-10-17T00:00:00.000Z');
+      const tomorrow = new Date('2025-10-19T00:00:00.000Z');
 
-      // Mock Date.now to ensure consistent results
-      jest.spyOn(global, 'Date').mockImplementation(() => today as any);
+      // Use fake timers to mock current date
+      jest.useFakeTimers();
+      jest.setSystemTime(today);
 
       const todayStr = formatDate(today);
       const yesterdayStr = formatDate(yesterday);
@@ -213,7 +214,7 @@ describe('테스트 인프라 검증', () => {
       expect(getRelativeDate(0)).toBe(todayStr);
       expect(getRelativeDate(1)).toBe(tomorrowStr);
 
-      jest.restoreAllMocks();
+      jest.useRealTimers();
     });
   });
 

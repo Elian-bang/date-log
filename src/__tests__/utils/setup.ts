@@ -59,19 +59,22 @@ Object.defineProperty(window, 'localStorage', {
 };
 
 // window.matchMedia mock (responsive design 테스트용)
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
+if (!window.matchMedia) {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+}
 
 // IntersectionObserver mock
 global.IntersectionObserver = class IntersectionObserver {
@@ -92,10 +95,26 @@ global.ResizeObserver = class ResizeObserver {
   unobserve() {}
 } as any;
 
-// 각 테스트 전 localStorage 초기화
+// 각 테스트 전 localStorage 초기화 및 window.matchMedia 재설정
 beforeEach(() => {
   localStorage.clear();
   jest.clearAllMocks();
+
+  // window.matchMedia를 각 테스트마다 재설정 (resetMocks로 인한 손실 방지)
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
 });
 
 // 각 테스트 후 타이머 정리

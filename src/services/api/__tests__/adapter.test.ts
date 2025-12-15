@@ -150,8 +150,20 @@ describe('DateLogAdapter', () => {
       const result = DateLogAdapter.toBackendCreateRequests(frontendDateLog);
 
       expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({ date: '2025-10-18', region: '삼송' });
-      expect(result[1]).toEqual({ date: '2025-10-18', region: '은평' });
+      expect(result[0]).toEqual({
+        date: '2025-10-18',
+        region: '삼송',
+        cafes: [],
+        restaurants: [],
+        spots: []
+      });
+      expect(result[1]).toEqual({
+        date: '2025-10-18',
+        region: '은평',
+        cafes: [],
+        restaurants: [],
+        spots: []
+      });
     });
   });
 
