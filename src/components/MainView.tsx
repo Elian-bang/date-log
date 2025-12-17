@@ -13,7 +13,7 @@ import { DateDetailView } from './detail/DateDetailView';
  * Main View Component
  * Unified view with smooth scroll transitions between calendar and detail sections
  */
-export const MainView = () => {
+const MainView = () => {
   const { dateId } = useParams<{ dateId?: string }>();
   const navigate = useNavigate();
   const { data, loading, addDate, loadMonthData } = useDateLogAPI();
@@ -193,3 +193,5 @@ export const MainView = () => {
     </div>
   );
 };
+
+export default MainView;

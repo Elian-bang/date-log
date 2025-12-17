@@ -8,9 +8,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
  */
 
 // Lazy load MainView for code splitting
-const MainView = lazy(() =>
-  import('@/components/MainView').then(module => ({ default: module.MainView }))
-);
+const MainView = lazy(() => import('@/components/MainView'));
 
 // Loading fallback component
 const LoadingFallback = () => (
