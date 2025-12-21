@@ -64,6 +64,9 @@ export interface DateEntryResponse {
 export interface CreateDateEntryRequest {
   date: string; // YYYY-MM-DD
   region: string;
+  cafes?: CreateCafeRequest[];
+  restaurants?: CreateRestaurantRequest[];
+  spots?: CreateSpotRequest[];
 }
 
 /**

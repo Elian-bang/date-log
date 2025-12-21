@@ -7,13 +7,16 @@
 
 import type {
   DateLog,
-  Region,
+  RegionSection,
   Cafe,
   Restaurant,
   Spot,
+} from '@/types';
+
+import type {
   DateEntryResponse,
   CreateDateEntryRequest,
-} from '@/types';
+} from '@/services/api/types';
 
 // ============================================
 // 1. 테스트 데이터 팩토리 함수
@@ -22,10 +25,13 @@ import type {
 export const createMockCafe = (overrides?: Partial<Cafe>): Cafe => ({
   id: `cafe-${Date.now()}`,
   name: '테스트 카페',
-  description: '테스트 카페 설명',
-  latitude: 37.123456,
-  longitude: 127.123456,
-  visitDate: '2025-10-18',
+  memo: '테스트 카페 설명',
+  link: 'https://map.kakao.com/test',
+  visited: false,
+  coordinates: {
+    lat: 37.123456,
+    lng: 127.123456,
+  },
   ...overrides,
 });
 
@@ -33,24 +39,30 @@ export const createMockRestaurant = (overrides?: Partial<Restaurant>): Restauran
   id: `restaurant-${Date.now()}`,
   name: '테스트 식당',
   type: '한식',
-  description: '테스트 식당 설명',
-  latitude: 37.123456,
-  longitude: 127.123456,
-  visitDate: '2025-10-18',
+  memo: '테스트 식당 설명',
+  link: 'https://map.kakao.com/test',
+  visited: false,
+  coordinates: {
+    lat: 37.123456,
+    lng: 127.123456,
+  },
   ...overrides,
 });
 
 export const createMockSpot = (overrides?: Partial<Spot>): Spot => ({
   id: `spot-${Date.now()}`,
   name: '테스트 장소',
-  description: '테스트 장소 설명',
-  latitude: 37.123456,
-  longitude: 127.123456,
-  visitDate: '2025-10-18',
+  memo: '테스트 장소 설명',
+  link: 'https://map.kakao.com/test',
+  visited: false,
+  coordinates: {
+    lat: 37.123456,
+    lng: 127.123456,
+  },
   ...overrides,
 });
 
-export const createMockRegion = (overrides?: Partial<Region>): Region => ({
+export const createMockRegion = (overrides?: Partial<RegionSection>): RegionSection => ({
   id: `region-${Date.now()}`,
   name: '테스트 지역',
   categories: {
@@ -200,10 +212,10 @@ export const createMockKakaoMaps = () => {
   const mockMap = jest.fn();
   const mockMarker = jest.fn();
   const mockGeocoder = jest.fn(() => ({
-    addressSearch: jest.fn((address, callback) => {
+    addressSearch: jest.fn((_address, callback) => {
       callback([{ x: '127.123456', y: '37.123456' }], 'OK');
     }),
-    coord2Address: jest.fn((lng, lat, callback) => {
+    coord2Address: jest.fn((_lng, _lat, callback) => {
       callback([{ address: { address_name: '테스트 주소' } }], 'OK');
     }),
   }));
@@ -275,7 +287,7 @@ export const createMockFetch = () => {
     });
   };
 
-  const setMockError = (error: string, status = 500) => {
+  const setMockError = (error: string, _status = 500) => {
     mockFetch.mockRejectedValueOnce(new Error(error));
   };
 
