@@ -1,18 +1,31 @@
 /**
  * API-Integrated DateLog Hook
  * Manages date log data with backend REST API integration
- * Features: API calls, optimistic updates, error handling, loading states
+ * Features: 5-state model, retry strategy, optimistic updates with rollback, error classification
  */
 
 import { useState, useCallback, useRef } from 'react';
 import { DateLogData, DateLog, CategoryType, Place, Restaurant } from '@/types';
-import { apiClient, DateLogAdapter, ApiClientError } from '@/services/api';
+import { apiClient, DateLogAdapter } from '@/services/api';
 import { DateEntryFilters } from '@/services/api/types';
 import { logger } from '@/utils/logger';
+import { defaultRetryStrategy } from '@/services/api/retry/RetryStrategy';
+import { errorClassifier } from '@/services/api/errors/ErrorClassifier';
+
+/**
+ * 5-State Model for API Hook
+ * - idle: Initial state, no data loaded yet
+ * - loading: First-time data loading
+ * - revalidating: Background refresh while showing stale data
+ * - success: Data successfully loaded
+ * - error: Error occurred
+ */
+export type ApiState = 'idle' | 'loading' | 'revalidating' | 'success' | 'error';
 
 interface UseDateLogAPIReturn {
   data: DateLogData;
-  loading: boolean;
+  state: ApiState;
+  loading: boolean; // Convenience flag: state === 'loading'
   error: string | null;
 
   // Date operations
@@ -50,12 +63,19 @@ interface UseDateLogAPIReturn {
 }
 
 export const useDateLogAPI = (): UseDateLogAPIReturn => {
+  // 5-State Model
   const [data, setData] = useState<DateLogData>({});
-  const [loading, setLoading] = useState<boolean>(true);
+  const [state, setState] = useState<ApiState>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  // Phase 2: Smart Caching - Track loaded months to prevent duplicate API calls
+  // Previous state snapshot for rollback
+  const previousDataRef = useRef<DateLogData>({});
+
+  // Smart Caching - Track loaded months to prevent duplicate API calls
   const loadedMonthsRef = useRef(new Set<string>());
+
+  // Convenience flag for backward compatibility
+  const loading = state === 'loading';
 
   // Helper: Find region name by ID
   const findRegionNameById = useCallback((date: string, regionId: string): string | undefined => {
@@ -65,38 +85,62 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
     return region?.name;
   }, [data]);
 
-  // Helper: Set error with logging
+  // Helper: Save current state snapshot for rollback
+  const saveSnapshot = useCallback(() => {
+    previousDataRef.current = JSON.parse(JSON.stringify(data));
+  }, [data]);
+
+  // Helper: Restore from snapshot
+  const restoreSnapshot = useCallback(() => {
+    setData(previousDataRef.current);
+  }, []);
+
+  // Helper: Set error with user-friendly message
   const handleError = useCallback((err: unknown, context: string) => {
-    const errorMessage = err instanceof ApiClientError ? err.message : '알 수 없는 오류가 발생했습니다';
-    setError(errorMessage);
-    logger.error(`${context}:`, err);
+    const userMessage = errorClassifier.getUserMessage(err);
+    setError(userMessage);
+    setState('error');
+    logger.error(`${context}:`, {
+      error: err,
+      userMessage,
+      severity: errorClassifier.getSeverity(err),
+    });
   }, []);
 
   // Load data from API with optional filters
   const loadData = useCallback(async (filters?: DateEntryFilters) => {
     try {
-      setLoading(true);
+      // Determine if this is initial load or revalidation
+      const isRevalidating = Object.keys(data).length > 0;
+      setState(isRevalidating ? 'revalidating' : 'loading');
       setError(null);
 
-      const entries = await apiClient.getDateEntries(filters);
+      // Execute with retry strategy
+      const entries = await defaultRetryStrategy.execute(
+        () => apiClient.getDateEntries(filters),
+        'loadData'
+      );
 
       // Merge new data with existing data instead of replacing
       setData(prev => DateLogAdapter.mergeDateLogData(prev, entries));
+      setState('success');
 
       logger.log('Data loaded successfully', {
         entryCount: entries.length,
         filters,
+        state: isRevalidating ? 'revalidating' : 'loading',
         action: 'merge'
       });
     } catch (err) {
       handleError(err, 'Failed to load data');
-    } finally {
-      setLoading(false);
     }
-  }, [handleError]);
+  }, [data, handleError]);
 
   // Date operations
   const addDate = useCallback(async (date: string, regionName: string) => {
+    // Save snapshot before optimistic update
+    saveSnapshot();
+
     try {
       setError(null);
 
@@ -116,8 +160,11 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      // API call
-      const newEntry = await apiClient.createDateEntry({ date, region: regionName });
+      // API call with retry strategy
+      const newEntry = await defaultRetryStrategy.execute(
+        () => apiClient.createDateEntry({ date, region: regionName }),
+        'addDate'
+      );
 
       // Update with real data
       setData((prev) => {
@@ -129,27 +176,26 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         return updated;
       });
 
-      // Phase 2: Invalidate cache for this month
+      // Invalidate cache for this month
       const dateObj = new Date(date);
       const key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
       loadedMonthsRef.current.delete(key);
 
       logger.log('Date added successfully', { date, regionName, cacheInvalidated: key });
     } catch (err) {
-      // Rollback optimistic update
-      setData((prev) => {
-        const newData = { ...prev };
-        delete newData[date];
-        return newData;
-      });
+      // Rollback to snapshot
+      restoreSnapshot();
       handleError(err, 'Failed to add date');
       throw err;
     }
-  }, [handleError]);
+  }, [saveSnapshot, restoreSnapshot, handleError]);
 
   const deleteDate = useCallback(async (date: string) => {
     const dateLog = data[date];
     if (!dateLog) return;
+
+    // Save snapshot before optimistic update
+    saveSnapshot();
 
     try {
       setError(null);
@@ -161,28 +207,28 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         return newData;
       });
 
-      // Delete all regions for this date
+      // Delete all regions for this date with retry strategy
       const deletePromises = dateLog.regions.map(region =>
-        apiClient.deleteDateEntry(region.id)
+        defaultRetryStrategy.execute(
+          () => apiClient.deleteDateEntry(region.id),
+          'deleteDate'
+        )
       );
       await Promise.all(deletePromises);
 
-      // Phase 2: Invalidate cache for this month
+      // Invalidate cache for this month
       const dateObj = new Date(date);
       const key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
       loadedMonthsRef.current.delete(key);
 
       logger.log('Date deleted successfully', { date, cacheInvalidated: key });
     } catch (err) {
-      // Rollback on error
-      setData((prev) => ({
-        ...prev,
-        [date]: dateLog,
-      }));
+      // Rollback to snapshot
+      restoreSnapshot();
       handleError(err, 'Failed to delete date');
       throw err;
     }
-  }, [data, handleError]);
+  }, [data, saveSnapshot, restoreSnapshot, handleError]);
 
   const getDateLog = useCallback((date: string): DateLog | undefined => {
     return data[date];
@@ -191,6 +237,9 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
   // Region operations
   const addRegion = useCallback(async (date: string, regionName: string) => {
     if (!data[date]) return;
+
+    // Save snapshot before optimistic update
+    saveSnapshot();
 
     // Generate tempId outside try block so it's accessible in catch
     const tempId = `temp-${Date.now()}`;
@@ -214,8 +263,11 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      // API call
-      const newEntry = await apiClient.createDateEntry({ date, region: regionName });
+      // API call with retry strategy
+      const newEntry = await defaultRetryStrategy.execute(
+        () => apiClient.createDateEntry({ date, region: regionName }),
+        'addRegion'
+      );
 
       // Update with real data
       setData((prev) => {
@@ -227,31 +279,28 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         return updated;
       });
 
-      // Phase 2: Invalidate cache for this month
+      // Invalidate cache for this month
       const dateObj = new Date(date);
       const key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
       loadedMonthsRef.current.delete(key);
 
       logger.log('Region added successfully', { date, regionName, cacheInvalidated: key });
     } catch (err) {
-      // Rollback optimistic update
-      setData((prev) => ({
-        ...prev,
-        [date]: {
-          ...prev[date],
-          regions: prev[date].regions.filter(r => r.id !== tempId),
-        },
-      }));
+      // Rollback to snapshot
+      restoreSnapshot();
       handleError(err, 'Failed to add region');
       throw err;
     }
-  }, [data, handleError]);
+  }, [data, saveSnapshot, restoreSnapshot, handleError]);
 
   const updateRegionName = useCallback(async (date: string, regionId: string, newName: string) => {
     if (!data[date]) return;
 
     const oldName = findRegionNameById(date, regionId);
     if (!oldName) return;
+
+    // Save snapshot before optimistic update
+    saveSnapshot();
 
     try {
       setError(null);
@@ -267,31 +316,29 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      // API call
-      await apiClient.updateDateEntry(regionId, { region: newName });
+      // API call with retry strategy
+      await defaultRetryStrategy.execute(
+        () => apiClient.updateDateEntry(regionId, { region: newName }),
+        'updateRegionName'
+      );
 
       logger.log('Region name updated successfully', { date, regionId, newName });
     } catch (err) {
-      // Rollback on error
-      setData((prev) => ({
-        ...prev,
-        [date]: {
-          ...prev[date],
-          regions: prev[date].regions.map((region) =>
-            region.id === regionId ? { ...region, name: oldName } : region
-          ),
-        },
-      }));
+      // Rollback to snapshot
+      restoreSnapshot();
       handleError(err, 'Failed to update region name');
       throw err;
     }
-  }, [data, findRegionNameById, handleError]);
+  }, [data, findRegionNameById, saveSnapshot, restoreSnapshot, handleError]);
 
   const deleteRegion = useCallback(async (date: string, regionId: string) => {
     if (!data[date]) return;
 
     const regionToDelete = data[date].regions.find(r => r.id === regionId);
     if (!regionToDelete) return;
+
+    // Save snapshot before optimistic update
+    saveSnapshot();
 
     try {
       setError(null);
@@ -305,28 +352,25 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      // API call
-      await apiClient.deleteDateEntry(regionId);
+      // API call with retry strategy
+      await defaultRetryStrategy.execute(
+        () => apiClient.deleteDateEntry(regionId),
+        'deleteRegion'
+      );
 
-      // Phase 2: Invalidate cache for this month
+      // Invalidate cache for this month
       const dateObj = new Date(date);
       const key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
       loadedMonthsRef.current.delete(key);
 
       logger.log('Region deleted successfully', { date, regionId, cacheInvalidated: key });
     } catch (err) {
-      // Rollback on error
-      setData((prev) => ({
-        ...prev,
-        [date]: {
-          ...prev[date],
-          regions: [...prev[date].regions, regionToDelete],
-        },
-      }));
+      // Rollback to snapshot
+      restoreSnapshot();
       handleError(err, 'Failed to delete region');
       throw err;
     }
-  }, [data, handleError]);
+  }, [data, saveSnapshot, restoreSnapshot, handleError]);
 
   // Place operations
   const addPlace = useCallback(async (
@@ -336,6 +380,9 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
     place: Omit<Place, 'id'>
   ) => {
     if (!data[date]) return;
+
+    // Save snapshot before optimistic update
+    saveSnapshot();
 
     // Generate tempId outside try block so it's accessible in catch
     const tempId = `temp-${Date.now()}`;
@@ -363,19 +410,28 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      // API call - properly typed for each category
+      // API call with retry strategy - properly typed for each category
       let frontendPlace;
       if (category === 'cafe') {
         const placeData = DateLogAdapter.toBackendCafe(place as Place);
-        const newPlace = await apiClient.createCafe(regionId, placeData);
+        const newPlace = await defaultRetryStrategy.execute(
+          () => apiClient.createCafe(regionId, placeData),
+          'addPlace:cafe'
+        );
         frontendPlace = DateLogAdapter.toCafe(newPlace);
       } else if (category === 'restaurant') {
         const placeData = DateLogAdapter.toBackendRestaurant(place as Restaurant);
-        const newPlace = await apiClient.createRestaurant(regionId, placeData);
+        const newPlace = await defaultRetryStrategy.execute(
+          () => apiClient.createRestaurant(regionId, placeData),
+          'addPlace:restaurant'
+        );
         frontendPlace = DateLogAdapter.toRestaurant(newPlace);
       } else {
         const placeData = DateLogAdapter.toBackendSpot(place as Place);
-        const newPlace = await apiClient.createSpot(regionId, placeData);
+        const newPlace = await defaultRetryStrategy.execute(
+          () => apiClient.createSpot(regionId, placeData),
+          'addPlace:spot'
+        );
         frontendPlace = DateLogAdapter.toSpot(newPlace);
       }
 
@@ -402,28 +458,12 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
 
       logger.log('Place added successfully', { date, regionId, category });
     } catch (err) {
-      // Rollback optimistic update
-      setData((prev) => ({
-        ...prev,
-        [date]: {
-          ...prev[date],
-          regions: prev[date].regions.map((region) =>
-            region.id === regionId
-              ? {
-                  ...region,
-                  categories: {
-                    ...region.categories,
-                    [category]: region.categories[category].filter(p => p.id !== tempId),
-                  },
-                }
-              : region
-          ),
-        },
-      }));
+      // Rollback to snapshot
+      restoreSnapshot();
       handleError(err, 'Failed to add place');
       throw err;
     }
-  }, [data, handleError]);
+  }, [data, saveSnapshot, restoreSnapshot, handleError]);
 
   const updatePlace = useCallback(async (
     date: string,
@@ -434,13 +474,14 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
   ) => {
     if (!data[date]) return;
 
-    // Get current place data for rollback
-    let oldPlace: Place | undefined;
+    // Get current place data for validation
     const region = data[date].regions.find(r => r.id === regionId);
-    if (region) {
-      oldPlace = region.categories[category].find(p => p.id === placeId);
-    }
+    if (!region) return;
+    const oldPlace = region.categories[category].find(p => p.id === placeId);
     if (!oldPlace) return;
+
+    // Save snapshot before optimistic update
+    saveSnapshot();
 
     try {
       setError(null);
@@ -466,41 +507,32 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      // API call
+      // API call with retry strategy
       if (category === 'cafe') {
-        await apiClient.updateCafe(placeId, updates as any);
+        await defaultRetryStrategy.execute(
+          () => apiClient.updateCafe(placeId, updates as any),
+          'updatePlace:cafe'
+        );
       } else if (category === 'restaurant') {
-        await apiClient.updateRestaurant(placeId, updates as any);
+        await defaultRetryStrategy.execute(
+          () => apiClient.updateRestaurant(placeId, updates as any),
+          'updatePlace:restaurant'
+        );
       } else {
-        await apiClient.updateSpot(placeId, updates as any);
+        await defaultRetryStrategy.execute(
+          () => apiClient.updateSpot(placeId, updates as any),
+          'updatePlace:spot'
+        );
       }
 
       logger.log('Place updated successfully', { date, regionId, category, placeId });
     } catch (err) {
-      // Rollback on error
-      setData((prev) => ({
-        ...prev,
-        [date]: {
-          ...prev[date],
-          regions: prev[date].regions.map((region) =>
-            region.id === regionId
-              ? {
-                  ...region,
-                  categories: {
-                    ...region.categories,
-                    [category]: region.categories[category].map((place) =>
-                      place.id === placeId ? oldPlace! : place
-                    ),
-                  },
-                }
-              : region
-          ),
-        },
-      }));
+      // Rollback to snapshot
+      restoreSnapshot();
       handleError(err, 'Failed to update place');
       throw err;
     }
-  }, [data, handleError]);
+  }, [data, saveSnapshot, restoreSnapshot, handleError]);
 
   const deletePlace = useCallback(async (
     date: string,
@@ -510,13 +542,14 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
   ) => {
     if (!data[date]) return;
 
-    // Get current place data for rollback
-    let deletedPlace: Place | undefined;
+    // Get current place data for validation
     const region = data[date].regions.find(r => r.id === regionId);
-    if (region) {
-      deletedPlace = region.categories[category].find(p => p.id === placeId);
-    }
+    if (!region) return;
+    const deletedPlace = region.categories[category].find(p => p.id === placeId);
     if (!deletedPlace) return;
+
+    // Save snapshot before optimistic update
+    saveSnapshot();
 
     try {
       setError(null);
@@ -540,39 +573,32 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      // API call
+      // API call with retry strategy
       if (category === 'cafe') {
-        await apiClient.deleteCafe(placeId);
+        await defaultRetryStrategy.execute(
+          () => apiClient.deleteCafe(placeId),
+          'deletePlace:cafe'
+        );
       } else if (category === 'restaurant') {
-        await apiClient.deleteRestaurant(placeId);
+        await defaultRetryStrategy.execute(
+          () => apiClient.deleteRestaurant(placeId),
+          'deletePlace:restaurant'
+        );
       } else {
-        await apiClient.deleteSpot(placeId);
+        await defaultRetryStrategy.execute(
+          () => apiClient.deleteSpot(placeId),
+          'deletePlace:spot'
+        );
       }
 
       logger.log('Place deleted successfully', { date, regionId, category, placeId });
     } catch (err) {
-      // Rollback on error
-      setData((prev) => ({
-        ...prev,
-        [date]: {
-          ...prev[date],
-          regions: prev[date].regions.map((region) =>
-            region.id === regionId
-              ? {
-                  ...region,
-                  categories: {
-                    ...region.categories,
-                    [category]: [...region.categories[category], deletedPlace!],
-                  },
-                }
-              : region
-          ),
-        },
-      }));
+      // Rollback to snapshot
+      restoreSnapshot();
       handleError(err, 'Failed to delete place');
       throw err;
     }
-  }, [data, handleError]);
+  }, [data, saveSnapshot, restoreSnapshot, handleError]);
 
   const toggleVisited = useCallback(async (
     date: string,
@@ -582,19 +608,16 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
   ) => {
     if (!data[date]) return;
 
-    // Get current visited status for rollback
-    let oldVisited = false;
+    // Get current visited status for validation
     const region = data[date].regions.find(r => r.id === regionId);
-    if (region) {
-      const place = region.categories[category].find(p => p.id === placeId);
-      if (place) {
-        oldVisited = place.visited;
-      } else {
-        return;
-      }
-    } else {
-      return;
-    }
+    if (!region) return;
+    const place = region.categories[category].find(p => p.id === placeId);
+    if (!place) return;
+
+    const oldVisited = place.visited;
+
+    // Save snapshot before optimistic update
+    saveSnapshot();
 
     try {
       setError(null);
@@ -620,41 +643,32 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         },
       }));
 
-      // API call
+      // API call with retry strategy
       if (category === 'cafe') {
-        await apiClient.updateCafe(placeId, { visited: !oldVisited });
+        await defaultRetryStrategy.execute(
+          () => apiClient.updateCafe(placeId, { visited: !oldVisited }),
+          'toggleVisited:cafe'
+        );
       } else if (category === 'restaurant') {
-        await apiClient.updateRestaurant(placeId, { visited: !oldVisited });
+        await defaultRetryStrategy.execute(
+          () => apiClient.updateRestaurant(placeId, { visited: !oldVisited }),
+          'toggleVisited:restaurant'
+        );
       } else {
-        await apiClient.updateSpot(placeId, { visited: !oldVisited });
+        await defaultRetryStrategy.execute(
+          () => apiClient.updateSpot(placeId, { visited: !oldVisited }),
+          'toggleVisited:spot'
+        );
       }
 
       logger.log('Visited status toggled successfully', { date, regionId, category, placeId });
     } catch (err) {
-      // Rollback on error
-      setData((prev) => ({
-        ...prev,
-        [date]: {
-          ...prev[date],
-          regions: prev[date].regions.map((region) =>
-            region.id === regionId
-              ? {
-                  ...region,
-                  categories: {
-                    ...region.categories,
-                    [category]: region.categories[category].map((place) =>
-                      place.id === placeId ? { ...place, visited: oldVisited } : place
-                    ),
-                  },
-                }
-              : region
-          ),
-        },
-      }));
+      // Rollback to snapshot
+      restoreSnapshot();
       handleError(err, 'Failed to toggle visited status');
       throw err;
     }
-  }, [data, handleError]);
+  }, [data, saveSnapshot, restoreSnapshot, handleError]);
 
   // Utility operations
   const refreshData = useCallback(async (filters?: DateEntryFilters) => {
@@ -687,14 +701,18 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
 
   const revalidateDate = useCallback(async (date: string) => {
     try {
-      setLoading(true);
+      // Use revalidating state for background refresh
+      setState('revalidating');
       setError(null);
 
-      // Use dedicated single-date API instead of date range filter
-      const entries = await apiClient.getDateEntries({
-        startDate: date,
-        endDate: date
-      });
+      // Use dedicated single-date API with retry strategy
+      const entries = await defaultRetryStrategy.execute(
+        () => apiClient.getDateEntries({
+          startDate: date,
+          endDate: date
+        }),
+        'revalidateDate'
+      );
 
       // Update only this specific date in state
       const frontendData = DateLogAdapter.toFrontendModel(entries);
@@ -704,20 +722,23 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         ...frontendData,
       }));
 
+      setState('success');
       logger.log('Date revalidated successfully', { date });
     } catch (err) {
       handleError(err, 'Failed to revalidate date');
-    } finally {
-      setLoading(false);
     }
   }, [handleError]);
 
   const clearError = useCallback(() => {
     setError(null);
-  }, []);
+    if (state === 'error') {
+      setState(Object.keys(data).length > 0 ? 'success' : 'idle');
+    }
+  }, [state, data]);
 
   return {
     data,
+    state,
     loading,
     error,
     addDate,
