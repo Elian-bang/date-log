@@ -85,47 +85,21 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     return places;
   }, [dateLog?.regions]);
 
-  // Early returns AFTER all hooks
-  if (loading) {
-    return <LoadingSpinner message="날짜 정보를 불러오는 중..." fullScreen />;
-  }
-
-  if (error) {
-    return (
-      <ErrorMessage
-        message={error}
-        onRetry={refreshData}
-        onDismiss={clearError}
-        variant="error"
-        fullScreen
-      />
+  // Calculate total regions and places with useMemo
+  const totalRegions = useMemo(() => dateLog?.regions.length ?? 0, [dateLog]);
+  const totalPlaces = useMemo(() => {
+    if (!dateLog) return 0;
+    return dateLog.regions.reduce(
+      (sum, region) =>
+        sum +
+        region.categories.cafe.length +
+        region.categories.restaurant.length +
+        region.categories.spot.length,
+      0
     );
-  }
+  }, [dateLog]);
 
-  if (!dateId) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-lg text-red-500">Invalid date</div>
-      </div>
-    );
-  }
-
-  if (!dateLog) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-        <div className="text-lg text-gray-600 mb-4">No data for this date</div>
-        <button
-          onClick={onBackToCalendar || (() => window.history.back())}
-          className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-        >
-          <FiArrowLeft />
-          <span>Back to Calendar</span>
-        </button>
-      </div>
-    );
-  }
-
-  // Place CRUD handlers
+  // Place CRUD handlers - defined before early returns to maintain consistent hook order
   const handleAddPlace = useCallback((regionId: string, category: CategoryType) => {
     setCurrentRegionId(regionId);
     setCurrentCategory(category);
@@ -242,19 +216,45 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     }
   }, [dateId, deleteDate, onBackToCalendar]);
 
-  // Calculate total regions and places with useMemo
-  const totalRegions = useMemo(() => dateLog?.regions.length ?? 0, [dateLog]);
-  const totalPlaces = useMemo(() => {
-    if (!dateLog) return 0;
-    return dateLog.regions.reduce(
-      (sum, region) =>
-        sum +
-        region.categories.cafe.length +
-        region.categories.restaurant.length +
-        region.categories.spot.length,
-      0
+  // Early returns AFTER all hooks (React hooks must be called in consistent order)
+  if (loading) {
+    return <LoadingSpinner message="날짜 정보를 불러오는 중..." fullScreen />;
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage
+        message={error}
+        onRetry={refreshData}
+        onDismiss={clearError}
+        variant="error"
+        fullScreen
+      />
     );
-  }, [dateLog]);
+  }
+
+  if (!dateId) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-lg text-red-500">Invalid date</div>
+      </div>
+    );
+  }
+
+  if (!dateLog) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
+        <div className="text-lg text-gray-600 mb-4">No data for this date</div>
+        <button
+          onClick={onBackToCalendar || (() => window.history.back())}
+          className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+        >
+          <FiArrowLeft />
+          <span>Back to Calendar</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50">
