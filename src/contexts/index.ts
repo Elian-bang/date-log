@@ -3,14 +3,6 @@
  */
 
 export {
-  KakaoMapsProvider,
-  KakaoMapsLoading,
-  KakaoMapsError,
-  KakaoMapsApiKeyMissing,
-  useKakaoMaps
-} from './KakaoMapsContext';
-
-export {
   DataSourceProvider,
   DataSourceSwitcher,
   useDataSource,

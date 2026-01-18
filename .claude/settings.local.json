@@ -3,7 +3,25 @@
     "allow": [
       "Bash(npm run lint)",
       "mcp__sequential-thinking__sequentialthinking",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npm run build:staging:*)",
+      "Bash(npm run build:production:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nchore: Update Claude Code approval settings for deployment\n\n로컬 개발 및 배포 워크플로우를 위한 Claude Code 승인 설정 업데이트:\n- 빌드 명령 자동 승인 (staging/production)\n- 네트워크 검사 도구 승인 (netstat, findstr)\n- 개발 서버 실행 승인\n- 타임아웃 명령 승인\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git restore:*)",
+      "Bash(git commit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(npm test:*)",
+      "Bash(move:*)",
+      "Bash(npm run build:*)",
+      "Bash(git push)",
+      "Bash(npm audit:*)"
     ],
     "deny": [],
     "ask": []
