@@ -271,12 +271,59 @@ export class DateLogAdapter {
   // ===== Utility Methods =====
 
   /**
-   * Merge frontend DateLogData with backend entries
-   * Useful for updating local state after API operations
+   * Merge date log data with proper region deduplication
+   *
+   * Merges new date entries with existing data while preserving all regions.
+   * If a date already exists, new regions are appended to the existing regions array.
+   * Duplicate region IDs are automatically filtered out to prevent duplication.
+   *
+   * @param existing - Current DateLogData state
+   * @param newEntries - New date entries from backend API
+   * @returns Merged DateLogData with all regions preserved
+   *
+   * @example
+   * ```typescript
+   * const existing = {
+   *   '2025-01-25': {
+   *     date: '2025-01-25',
+   *     regions: [{ id: 'uuid1', name: '삼송', categories: {...} }]
+   *   }
+   * };
+   * const newEntries = [
+   *   { id: 'uuid2', date: '2025-01-25', region: '연신내', ... }
+   * ];
+   * const merged = DateLogAdapter.mergeDateLogData(existing, newEntries);
+   * // Result:
+   * // { '2025-01-25': {
+   * //     regions: [
+   * //       { id: 'uuid1', name: '삼송', ... },
+   * //       { id: 'uuid2', name: '연신내', ... }
+   * //     ]
+   * //   }
+   * // }
+   * ```
    */
   static mergeDateLogData(existing: DateLogData, newEntries: DateEntryResponse[]): DateLogData {
     const newData = this.toFrontendModel(newEntries);
-    return { ...existing, ...newData };
+    const merged = { ...existing };
+
+    Object.entries(newData).forEach(([date, newDateLog]) => {
+      if (merged[date]) {
+        // 기존 날짜가 있으면 regions 배열 병합
+        const existingRegionIds = new Set(merged[date].regions.map((r) => r.id));
+        const newRegions = newDateLog.regions.filter((r) => !existingRegionIds.has(r.id));
+
+        merged[date] = {
+          ...merged[date],
+          regions: [...merged[date].regions, ...newRegions],
+        };
+      } else {
+        // 새 날짜면 그대로 추가
+        merged[date] = newDateLog;
+      }
+    });
+
+    return merged;
   }
 
   /**

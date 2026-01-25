@@ -321,5 +321,250 @@ describe('DateLogAdapter', () => {
       expect(result['2025-10-18']).toBeDefined();
       expect(result['2025-10-18'].regions[0].name).toBe('삼송');
     });
+
+    describe('Region Merge Behavior - Fixed', () => {
+      it('동일 날짜에 여러 region 병합', () => {
+        const existing: DateLogData = {
+          '2025-01-25': {
+            date: '2025-01-25',
+            regions: [
+              {
+                id: 'uuid1',
+                name: '삼송',
+                categories: {
+                  cafe: [
+                    {
+                      id: 'cafe1',
+                      name: '스타벅스',
+                      link: 'https://map.kakao.com',
+                      visited: false,
+                    },
+                  ],
+                  restaurant: [],
+                  spot: [],
+                },
+              },
+            ],
+          },
+        };
+
+        const newEntries: DateEntryResponse[] = [
+          {
+            id: 'uuid2',
+            date: '2025-01-25',
+            region: '연신내',
+            cafes: [],
+            restaurants: [],
+            spots: [],
+            createdAt: '2025-01-25T00:00:00Z',
+            updatedAt: '2025-01-25T00:00:00Z',
+          },
+        ];
+
+        const result = DateLogAdapter.mergeDateLogData(existing, newEntries);
+
+        // ✅ 두 region 모두 유지됨
+        expect(result['2025-01-25'].regions.length).toBe(2);
+        expect(result['2025-01-25'].regions.map((r) => r.name)).toEqual(['삼송', '연신내']);
+      });
+
+      it('기존 region의 places 데이터는 유지됨', () => {
+        const existing: DateLogData = {
+          '2025-01-25': {
+            date: '2025-01-25',
+            regions: [
+              {
+                id: 'uuid1',
+                name: '삼송',
+                categories: {
+                  cafe: [
+                    {
+                      id: 'cafe1',
+                      name: '스타벅스',
+                      link: 'https://map.kakao.com',
+                      visited: false,
+                    },
+                  ],
+                  restaurant: [],
+                  spot: [],
+                },
+              },
+            ],
+          },
+        };
+
+        const newEntries: DateEntryResponse[] = [
+          {
+            id: 'uuid2',
+            date: '2025-01-25',
+            region: '연신내',
+            cafes: [],
+            restaurants: [],
+            spots: [],
+            createdAt: '2025-01-25T00:00:00Z',
+            updatedAt: '2025-01-25T00:00:00Z',
+          },
+        ];
+
+        const result = DateLogAdapter.mergeDateLogData(existing, newEntries);
+
+        // ✅ 기존 region의 카페 데이터 보존
+        expect(result['2025-01-25'].regions.length).toBe(2);
+        expect(result['2025-01-25'].regions[0].categories.cafe[0].name).toBe('스타벅스');
+        expect(result['2025-01-25'].regions[1].name).toBe('연신내');
+      });
+
+      it('중복 region ID는 추가하지 않음', () => {
+        const existing: DateLogData = {
+          '2025-01-25': {
+            date: '2025-01-25',
+            regions: [
+              {
+                id: 'uuid1',
+                name: '삼송',
+                categories: { cafe: [], restaurant: [], spot: [] },
+              },
+            ],
+          },
+        };
+
+        const newEntries: DateEntryResponse[] = [
+          {
+            id: 'uuid1', // 동일 ID
+            date: '2025-01-25',
+            region: '삼송',
+            cafes: [
+              {
+                id: 'cafe1',
+                name: '새 카페',
+                memo: undefined,
+                image: undefined,
+                link: 'https://map.kakao.com',
+                visited: false,
+                latitude: 37.123,
+                longitude: 127.456,
+                dateEntryId: 'uuid1',
+                createdAt: '2025-01-25T00:00:00Z',
+                updatedAt: '2025-01-25T00:00:00Z',
+              },
+            ],
+            restaurants: [],
+            spots: [],
+            createdAt: '2025-01-25T00:00:00Z',
+            updatedAt: '2025-01-25T00:00:00Z',
+          },
+        ];
+
+        const result = DateLogAdapter.mergeDateLogData(existing, newEntries);
+
+        // ✅ 중복 추가 방지 (동일 ID는 필터링됨)
+        expect(result['2025-01-25'].regions.length).toBe(1);
+        expect(result['2025-01-25'].regions[0].id).toBe('uuid1');
+      });
+
+      it('빈 newEntries 배열 처리', () => {
+        const existing: DateLogData = {
+          '2025-01-25': {
+            date: '2025-01-25',
+            regions: [
+              {
+                id: 'uuid1',
+                name: '삼송',
+                categories: { cafe: [], restaurant: [], spot: [] },
+              },
+            ],
+          },
+        };
+
+        const result = DateLogAdapter.mergeDateLogData(existing, []);
+
+        // ✅ 기존 데이터 유지
+        expect(result).toEqual(existing);
+      });
+
+      it('여러 날짜 동시 병합', () => {
+        const existing: DateLogData = {
+          '2025-01-25': {
+            date: '2025-01-25',
+            regions: [
+              {
+                id: 'uuid1',
+                name: '삼송',
+                categories: { cafe: [], restaurant: [], spot: [] },
+              },
+            ],
+          },
+        };
+
+        const newEntries: DateEntryResponse[] = [
+          {
+            id: 'uuid2',
+            date: '2025-01-25',
+            region: '연신내',
+            cafes: [],
+            restaurants: [],
+            spots: [],
+            createdAt: '2025-01-25T00:00:00Z',
+            updatedAt: '2025-01-25T00:00:00Z',
+          },
+          {
+            id: 'uuid3',
+            date: '2025-01-26',
+            region: '홍대',
+            cafes: [],
+            restaurants: [],
+            spots: [],
+            createdAt: '2025-01-26T00:00:00Z',
+            updatedAt: '2025-01-26T00:00:00Z',
+          },
+        ];
+
+        const result = DateLogAdapter.mergeDateLogData(existing, newEntries);
+
+        // ✅ 모든 날짜 및 region 유지
+        expect(Object.keys(result).sort()).toEqual(['2025-01-25', '2025-01-26']);
+        expect(result['2025-01-25'].regions.length).toBe(2);
+        expect(result['2025-01-26'].regions.length).toBe(1);
+      });
+
+      it('여러 region을 가진 기존 날짜에 새 region 추가', () => {
+        const existing: DateLogData = {
+          '2025-01-25': {
+            date: '2025-01-25',
+            regions: [
+              {
+                id: 'uuid1',
+                name: '삼송',
+                categories: { cafe: [], restaurant: [], spot: [] },
+              },
+              {
+                id: 'uuid2',
+                name: '연신내',
+                categories: { cafe: [], restaurant: [], spot: [] },
+              },
+            ],
+          },
+        };
+
+        const newEntries: DateEntryResponse[] = [
+          {
+            id: 'uuid3',
+            date: '2025-01-25',
+            region: '홍대',
+            cafes: [],
+            restaurants: [],
+            spots: [],
+            createdAt: '2025-01-25T00:00:00Z',
+            updatedAt: '2025-01-25T00:00:00Z',
+          },
+        ];
+
+        const result = DateLogAdapter.mergeDateLogData(existing, newEntries);
+
+        // ✅ 기존 2개 + 새 1개 = 총 3개 region
+        expect(result['2025-01-25'].regions.length).toBe(3);
+        expect(result['2025-01-25'].regions.map((r) => r.name)).toEqual(['삼송', '연신내', '홍대']);
+      });
+    });
   });
 });
