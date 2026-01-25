@@ -701,8 +701,11 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
 
   const revalidateDate = useCallback(async (date: string) => {
     try {
-      // Use revalidating state for background refresh
-      setState('revalidating');
+      // Bug Fix 1: Use conditional state based on existing data
+      // - If no data exists yet: use 'loading' state (shows spinner)
+      // - If data already exists: use 'revalidating' state (shows existing data)
+      const hasExistingData = !!data[date];
+      setState(hasExistingData ? 'revalidating' : 'loading');
       setError(null);
 
       // Use dedicated single-date API with retry strategy
@@ -714,20 +717,16 @@ export const useDateLogAPI = (): UseDateLogAPIReturn => {
         'revalidateDate'
       );
 
-      // Update only this specific date in state
-      const frontendData = DateLogAdapter.toFrontendModel(entries);
-
-      setData((prev) => ({
-        ...prev,
-        ...frontendData,
-      }));
+      // Bug Fix 2: Use mergeDateLogData to preserve existing regions
+      // Previously used shallow spread which lost regions from other backend entries
+      setData((prev) => DateLogAdapter.mergeDateLogData(prev, entries));
 
       setState('success');
-      logger.log('Date revalidated successfully', { date });
+      logger.log('Date revalidated successfully', { date, hasExistingData });
     } catch (err) {
       handleError(err, 'Failed to revalidate date');
     }
-  }, [handleError]);
+  }, [data, handleError]);
 
   const clearError = useCallback(() => {
     setError(null);
