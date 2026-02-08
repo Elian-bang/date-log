@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
-import { FiX, FiMapPin } from 'react-icons/fi';
+import { FiX, FiMapPin, FiUpload, FiImage } from 'react-icons/fi';
 import { CategoryType, Place, Restaurant, RestaurantType, PlaceFormData, Coordinates } from '@/types';
 import { CATEGORY_CONFIG, RESTAURANT_TYPES } from '@/utils/constants';
 import { extractCoordinatesFromUrl, validateCoordinates } from '@/utils/coordinateParser';
+import {
+  uploadImageToCloudinary,
+  validateImageFile,
+  generatePreviewUrl,
+  UploadProgress,
+} from '@/utils/cloudinaryUpload';
 
 interface PlaceFormModalProps {
   isOpen: boolean;
@@ -40,6 +46,10 @@ export const PlaceFormModal = ({
     status: 'none' | 'extracting' | 'success' | 'failed';
     coordinates?: Coordinates;
   }>({ status: 'none' });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
 
   // Populate form when editing
   useEffect(() => {
@@ -94,6 +104,61 @@ export const PlaceFormModal = ({
 
     return () => clearTimeout(timer);
   }, [formData.link]);
+
+  // Handle image file selection
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setError(validation.error || '');
+      return;
+    }
+
+    setImageFile(file);
+    setError('');
+
+    // Generate preview
+    try {
+      const previewUrl = await generatePreviewUrl(file);
+      setImagePreview(previewUrl);
+    } catch (error) {
+      console.error('Failed to generate preview:', error);
+    }
+  };
+
+  // Upload image to Cloudinary
+  const handleImageUpload = async () => {
+    if (!imageFile) return;
+
+    setUploadingImage(true);
+    setUploadProgress(0);
+    setError('');
+
+    try {
+      const result = await uploadImageToCloudinary(imageFile, (progress: UploadProgress) => {
+        setUploadProgress(progress.percentage);
+      });
+
+      setFormData({ ...formData, image: result.url });
+      setUploadingImage(false);
+      setImageFile(null);
+      setImagePreview('');
+      setUploadProgress(0);
+    } catch (error) {
+      setUploadingImage(false);
+      setError(error instanceof Error ? error.message : '이미지 업로드 실패');
+    }
+  };
+
+  // Remove selected image
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, image: '' });
+    setImageFile(null);
+    setImagePreview('');
+  };
 
   if (!isOpen) return null;
 
@@ -238,21 +303,110 @@ export const PlaceFormModal = ({
             />
           </div>
 
-          {/* Image URL */}
+          {/* Image Upload */}
           <div>
-            <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-              이미지 URL
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              이미지 (선택사항)
             </label>
-            <input
-              type="text"
-              id="image"
-              value={formData.image}
-              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              placeholder="예: /images/cafe1.jpg 또는 https://..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
+
+            {/* Current Image or Preview */}
+            {(formData.image || imagePreview) && (
+              <div className="mb-3 relative">
+                <img
+                  src={imagePreview || formData.image}
+                  alt="Preview"
+                  className="w-full h-40 object-cover rounded-lg border border-gray-300"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                  aria-label="Remove image"
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Upload Options */}
+            {!formData.image && !imagePreview && (
+              <div className="space-y-2">
+                {/* File Upload */}
+                <div>
+                  <label
+                    htmlFor="image-file"
+                    className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                  >
+                    <FiImage className="w-5 h-5 text-gray-600" />
+                    <span className="text-sm text-gray-700">
+                      로컬 이미지 선택 (최대 10MB)
+                    </span>
+                  </label>
+                  <input
+                    type="file"
+                    id="image-file"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* URL Input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="image-url"
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="또는 이미지 URL 입력"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Selected File Info */}
+            {imageFile && !uploadingImage && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FiImage className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-blue-900">{imageFile.name}</span>
+                    <span className="text-xs text-blue-600">
+                      ({(imageFile.size / 1024).toFixed(1)} KB)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleImageUpload}
+                    className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                  >
+                    <FiUpload className="w-3 h-3" />
+                    업로드
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Upload Progress */}
+            {uploadingImage && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-sm text-blue-900">업로드 중...</span>
+                  <span className="text-sm text-blue-600 font-medium">{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             <p className="text-xs text-gray-500 mt-1">
-              선택사항: 이미지 URL을 입력하세요
+              JPG, PNG, GIF, WebP 형식 지원
             </p>
           </div>
 
