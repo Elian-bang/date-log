@@ -25,7 +25,8 @@ export const CalendarView = () => {
       const month = currentMonth.getMonth() + 1; // 0-indexed, so add 1
       loadMonthData(year, month);
     }
-  }, [currentMonth, loadMonthData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMonth]); // Only depend on currentMonth to prevent infinite loop
 
   // Month navigation handlers
   const handlePreviousMonth = useCallback(() => {
