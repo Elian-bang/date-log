@@ -284,7 +284,7 @@ export const PlaceFormModal = ({
                   <>
                     <FiMapPin className="w-3 h-3 text-green-600" />
                     <span className="text-green-600">
-                      좌표 확인됨 ({coordinateInfo.coordinates.lat.toFixed(4)}, {coordinateInfo.coordinates.lng.toFixed(4)})
+                      ✅ 좌표 확인됨 ({coordinateInfo.coordinates.lat.toFixed(4)}, {coordinateInfo.coordinates.lng.toFixed(4)})
                     </span>
                   </>
                 )}
@@ -292,16 +292,25 @@ export const PlaceFormModal = ({
                   <>
                     <FiMapPin className="w-3 h-3 text-orange-600" />
                     <span className="text-orange-600">
-                      좌표를 추출할 수 없습니다. 지도에 마커가 표시되지 않을 수 있습니다.
+                      ⚠️ 좌표를 추출할 수 없습니다. 백엔드에서 자동 추출을 시도하거나, 지도에 마커가 표시되지 않을 수 있습니다.
                     </span>
                   </>
                 )}
               </div>
             )}
 
-            <p className="text-xs text-gray-500 mt-1">
-              네이버 지도 또는 카카오맵 링크를 입력하면 자동으로 좌표가 추출됩니다
-            </p>
+            <div className="mt-1 space-y-1">
+              <p className="text-xs text-gray-600 font-medium">
+                💡 좌표가 포함된 링크를 입력하세요:
+              </p>
+              <ul className="text-xs text-gray-500 space-y-0.5 ml-4 list-disc">
+                <li>카카오맵: 장소 검색 → 공유 버튼 → "지도 URL 복사"</li>
+                <li>네이버 지도: 장소 검색 → 공유 → "링크 복사"</li>
+                <li className="text-orange-600">
+                  ⚠️ "place.map.kakao.com/[숫자]" 형식은 백엔드에서 자동 변환됩니다
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* Error Message */}
