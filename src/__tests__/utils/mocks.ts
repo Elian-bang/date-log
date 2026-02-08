@@ -25,7 +25,7 @@ import type {
 export const createMockCafe = (overrides?: Partial<Cafe>): Cafe => ({
   id: `cafe-${Date.now()}`,
   name: '테스트 카페',
-  memo: '테스트 카페 설명',
+  boyfriendMemo: '테스트 카페 설명',
   link: 'https://map.kakao.com/test',
   visited: false,
   coordinates: {
@@ -39,7 +39,7 @@ export const createMockRestaurant = (overrides?: Partial<Restaurant>): Restauran
   id: `restaurant-${Date.now()}`,
   name: '테스트 식당',
   type: '한식',
-  memo: '테스트 식당 설명',
+  boyfriendMemo: '테스트 식당 설명',
   link: 'https://map.kakao.com/test',
   visited: false,
   coordinates: {
@@ -52,7 +52,7 @@ export const createMockRestaurant = (overrides?: Partial<Restaurant>): Restauran
 export const createMockSpot = (overrides?: Partial<Spot>): Spot => ({
   id: `spot-${Date.now()}`,
   name: '테스트 장소',
-  memo: '테스트 장소 설명',
+  boyfriendMemo: '테스트 장소 설명',
   link: 'https://map.kakao.com/test',
   visited: false,
   coordinates: {

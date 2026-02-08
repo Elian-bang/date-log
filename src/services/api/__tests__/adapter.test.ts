@@ -19,7 +19,7 @@ describe('DateLogAdapter', () => {
         {
           id: 'cafe-1',
           name: '카페 테스트',
-          memo: '분위기 좋음',
+          boyfriendMemo: '분위기 좋음',
           image: undefined,
           link: 'https://map.kakao.com',
           visited: true,
@@ -35,7 +35,7 @@ describe('DateLogAdapter', () => {
           id: 'restaurant-1',
           name: '이이요',
           type: RestaurantType.KOREAN,
-          memo: '고등어정식',
+          boyfriendMemo: '고등어정식',
           image: undefined,
           link: 'https://map.kakao.com',
           visited: true,
@@ -60,7 +60,8 @@ describe('DateLogAdapter', () => {
         {
           id: 'spot-1',
           name: '북한산',
-          memo: undefined,
+          boyfriendMemo: undefined,
+          girlfriendMemo: undefined,
           image: undefined,
           link: 'https://map.kakao.com',
           visited: false,
@@ -437,7 +438,8 @@ describe('DateLogAdapter', () => {
               {
                 id: 'cafe1',
                 name: '새 카페',
-                memo: undefined,
+                boyfriendMemo: undefined,
+                girlfriendMemo: undefined,
                 image: undefined,
                 link: 'https://map.kakao.com',
                 visited: false,

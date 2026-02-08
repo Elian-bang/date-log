@@ -133,8 +133,19 @@ export const MapView = ({ places, center, onMarkerClick }: MapViewProps) => {
                       )}
                     </div>
 
-                    {place.memo && (
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{place.memo}</p>
+                    {(place.boyfriendMemo || place.girlfriendMemo) && (
+                      <div className="text-xs text-gray-600 mb-2 space-y-1">
+                        {place.boyfriendMemo && (
+                          <p className="line-clamp-1">
+                            <span className="font-medium text-blue-600">💙</span> {place.boyfriendMemo}
+                          </p>
+                        )}
+                        {place.girlfriendMemo && (
+                          <p className="line-clamp-1">
+                            <span className="font-medium text-pink-600">💗</span> {place.girlfriendMemo}
+                          </p>
+                        )}
+                      </div>
                     )}
 
                     {place.link && (

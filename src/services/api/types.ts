@@ -96,7 +96,8 @@ export interface DateEntryFilters {
 export interface CafeResponse {
   id: string;
   name: string;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link?: string;
   visited: boolean;
@@ -112,7 +113,8 @@ export interface CafeResponse {
  */
 export interface CreateCafeRequest {
   name: string;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link?: string;
   visited?: boolean;
@@ -125,7 +127,8 @@ export interface CreateCafeRequest {
  */
 export interface UpdateCafeRequest {
   name?: string;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link?: string;
   visited?: boolean;
@@ -153,7 +156,8 @@ export interface RestaurantResponse {
   id: string;
   name: string;
   type: RestaurantType;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link?: string;
   visited: boolean;
@@ -170,7 +174,8 @@ export interface RestaurantResponse {
 export interface CreateRestaurantRequest {
   name: string;
   type: RestaurantType;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link?: string;
   visited?: boolean;
@@ -184,7 +189,8 @@ export interface CreateRestaurantRequest {
 export interface UpdateRestaurantRequest {
   name?: string;
   type?: RestaurantType;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link?: string;
   visited?: boolean;
@@ -200,7 +206,8 @@ export interface UpdateRestaurantRequest {
 export interface SpotResponse {
   id: string;
   name: string;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link?: string;
   visited: boolean;
@@ -216,7 +223,8 @@ export interface SpotResponse {
  */
 export interface CreateSpotRequest {
   name: string;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link?: string;
   visited?: boolean;
@@ -229,7 +237,8 @@ export interface CreateSpotRequest {
  */
 export interface UpdateSpotRequest {
   name?: string;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link?: string;
   visited?: boolean;

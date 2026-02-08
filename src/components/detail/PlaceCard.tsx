@@ -55,9 +55,22 @@ export const PlaceCard = memo(({
         {/* Name */}
         <h3 className="font-bold text-gray-800 text-base sm:text-lg truncate">{place.name}</h3>
 
-        {/* Memo */}
-        {place.memo && (
-          <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">{place.memo}</p>
+        {/* Memos */}
+        {(place.boyfriendMemo || place.girlfriendMemo) && (
+          <div className="space-y-1.5">
+            {place.boyfriendMemo && (
+              <div className="text-xs sm:text-sm">
+                <span className="font-medium text-blue-600">💙 남자친구:</span>
+                <p className="text-gray-600 line-clamp-2 mt-0.5">{place.boyfriendMemo}</p>
+              </div>
+            )}
+            {place.girlfriendMemo && (
+              <div className="text-xs sm:text-sm">
+                <span className="font-medium text-pink-600">💗 여자친구:</span>
+                <p className="text-gray-600 line-clamp-2 mt-0.5">{place.girlfriendMemo}</p>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Actions */}

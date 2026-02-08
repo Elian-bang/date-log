@@ -143,7 +143,8 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
         // Update existing place
         await updatePlace(dateId, currentRegionId, currentCategory, editingPlace.id, {
           name: data.name,
-          memo: data.memo,
+          boyfriendMemo: data.boyfriendMemo,
+          girlfriendMemo: data.girlfriendMemo,
           image: data.image,
           link: data.link,
           coordinates: data.coordinates,
@@ -153,7 +154,8 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
         // Add new place
         await addPlace(dateId, currentRegionId, currentCategory, {
           name: data.name,
-          memo: data.memo,
+          boyfriendMemo: data.boyfriendMemo,
+          girlfriendMemo: data.girlfriendMemo,
           image: data.image,
           link: data.link,
           coordinates: data.coordinates,

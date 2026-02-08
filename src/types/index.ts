@@ -12,7 +12,8 @@ export interface Coordinates {
 export interface Place {
   id: string;
   name: string;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link: string;
   visited: boolean;
@@ -62,7 +63,8 @@ export type RestaurantType = '전체' | '한식' | '일식' | '중식' | '고기
 // Form data types
 export interface PlaceFormData {
   name: string;
-  memo?: string;
+  boyfriendMemo?: string;
+  girlfriendMemo?: string;
   image?: string;
   link: string;
   coordinates?: Coordinates; // Extracted from map link

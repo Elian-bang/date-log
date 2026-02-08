@@ -28,7 +28,8 @@ export const PlaceFormModal = ({
 
   const [formData, setFormData] = useState<PlaceFormData>({
     name: '',
-    memo: '',
+    boyfriendMemo: '',
+    girlfriendMemo: '',
     image: '',
     link: '',
     coordinates: undefined,
@@ -46,7 +47,8 @@ export const PlaceFormModal = ({
       const coords = editingPlace.coordinates;
       setFormData({
         name: editingPlace.name,
-        memo: editingPlace.memo || '',
+        boyfriendMemo: editingPlace.boyfriendMemo || '',
+        girlfriendMemo: editingPlace.girlfriendMemo || '',
         image: editingPlace.image || '',
         link: editingPlace.link,
         coordinates: coords,
@@ -58,7 +60,8 @@ export const PlaceFormModal = ({
     } else {
       setFormData({
         name: '',
-        memo: '',
+        boyfriendMemo: '',
+        girlfriendMemo: '',
         image: '',
         link: '',
         coordinates: undefined,
@@ -115,7 +118,8 @@ export const PlaceFormModal = ({
     // Reset and close
     setFormData({
       name: '',
-      memo: '',
+      boyfriendMemo: '',
+      girlfriendMemo: '',
       image: '',
       link: '',
       coordinates: undefined,
@@ -129,7 +133,8 @@ export const PlaceFormModal = ({
   const handleClose = () => {
     setFormData({
       name: '',
-      memo: '',
+      boyfriendMemo: '',
+      girlfriendMemo: '',
       image: '',
       link: '',
       coordinates: undefined,
@@ -201,17 +206,34 @@ export const PlaceFormModal = ({
             </div>
           )}
 
-          {/* Memo */}
+          {/* Boyfriend Memo */}
           <div>
-            <label htmlFor="memo" className="block text-sm font-medium text-gray-700 mb-1">
-              메모
+            <label htmlFor="boyfriendMemo" className="block text-sm font-medium text-gray-700 mb-1">
+              💙 남자친구 메모
             </label>
             <textarea
-              id="memo"
-              value={formData.memo}
-              onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
+              id="boyfriendMemo"
+              value={formData.boyfriendMemo}
+              onChange={(e) => setFormData({ ...formData, boyfriendMemo: e.target.value })}
+              placeholder="예: 음식이 맛있어요"
+              rows={2}
+              maxLength={200}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+            />
+          </div>
+
+          {/* Girlfriend Memo */}
+          <div>
+            <label htmlFor="girlfriendMemo" className="block text-sm font-medium text-gray-700 mb-1">
+              💗 여자친구 메모
+            </label>
+            <textarea
+              id="girlfriendMemo"
+              value={formData.girlfriendMemo}
+              onChange={(e) => setFormData({ ...formData, girlfriendMemo: e.target.value })}
               placeholder="예: 분위기 좋은 창가 자리 있음"
-              rows={3}
+              rows={2}
+              maxLength={200}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
             />
           </div>

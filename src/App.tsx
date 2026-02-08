@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './routes';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { DataSourceProvider, DataSourceSwitcher } from './contexts';
+import { migrateMemoFields } from './utils/migrateMemoFields';
 
 /**
  * Main App Component
@@ -12,6 +14,11 @@ import { DataSourceProvider, DataSourceSwitcher } from './contexts';
  * to ensure stable hook call order and prevent React Error #310
  */
 function App() {
+  // Run memo fields migration on app initialization
+  useEffect(() => {
+    migrateMemoFields();
+  }, []);
+
   return (
     <DataSourceProvider>
       <ErrorBoundary>

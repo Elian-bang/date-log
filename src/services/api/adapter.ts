@@ -87,7 +87,8 @@ export class DateLogAdapter {
     return {
       id: cafe.id,
       name: cafe.name,
-      memo: cafe.memo || undefined,
+      boyfriendMemo: cafe.boyfriendMemo || undefined,
+      girlfriendMemo: cafe.girlfriendMemo || undefined,
       image: cafe.image || undefined,
       link: cafe.link || '',
       visited: cafe.visited,
@@ -104,7 +105,8 @@ export class DateLogAdapter {
       id: restaurant.id,
       name: restaurant.name,
       type: DateLogAdapter.toFrontendRestaurantType(restaurant.type),
-      memo: restaurant.memo || undefined,
+      boyfriendMemo: restaurant.boyfriendMemo || undefined,
+      girlfriendMemo: restaurant.girlfriendMemo || undefined,
       image: restaurant.image || undefined,
       link: restaurant.link || '',
       visited: restaurant.visited,
@@ -120,7 +122,8 @@ export class DateLogAdapter {
     return {
       id: spot.id,
       name: spot.name,
-      memo: spot.memo || undefined,
+      boyfriendMemo: spot.boyfriendMemo || undefined,
+      girlfriendMemo: spot.girlfriendMemo || undefined,
       image: spot.image || undefined,
       link: spot.link || '',
       visited: spot.visited,
@@ -185,7 +188,8 @@ export class DateLogAdapter {
    */
   static toBackendCafe(cafe: Cafe): {
     name: string;
-    memo?: string;
+    boyfriendMemo?: string;
+    girlfriendMemo?: string;
     image?: string;
     link?: string;
     visited?: boolean;
@@ -194,7 +198,8 @@ export class DateLogAdapter {
   } {
     return {
       name: cafe.name,
-      memo: cafe.memo,
+      boyfriendMemo: cafe.boyfriendMemo,
+      girlfriendMemo: cafe.girlfriendMemo,
       image: cafe.image,
       link: cafe.link || undefined,
       visited: cafe.visited,
@@ -209,7 +214,8 @@ export class DateLogAdapter {
   static toBackendRestaurant(restaurant: Restaurant): {
     name: string;
     type: RestaurantType;
-    memo?: string;
+    boyfriendMemo?: string;
+    girlfriendMemo?: string;
     image?: string;
     link?: string;
     visited?: boolean;
@@ -219,7 +225,8 @@ export class DateLogAdapter {
     return {
       name: restaurant.name,
       type: this.toBackendRestaurantType(restaurant.type),
-      memo: restaurant.memo,
+      boyfriendMemo: restaurant.boyfriendMemo,
+      girlfriendMemo: restaurant.girlfriendMemo,
       image: restaurant.image,
       link: restaurant.link || undefined,
       visited: restaurant.visited,
@@ -233,7 +240,8 @@ export class DateLogAdapter {
    */
   static toBackendSpot(spot: Spot): {
     name: string;
-    memo?: string;
+    boyfriendMemo?: string;
+    girlfriendMemo?: string;
     image?: string;
     link?: string;
     visited?: boolean;
@@ -242,7 +250,8 @@ export class DateLogAdapter {
   } {
     return {
       name: spot.name,
-      memo: spot.memo,
+      boyfriendMemo: spot.boyfriendMemo,
+      girlfriendMemo: spot.girlfriendMemo,
       image: spot.image,
       link: spot.link || undefined,
       visited: spot.visited,
