@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiArrowLeft, FiPlus, FiMap, FiTrash2 } from 'react-icons/fi';
 import { useDateLogAPI } from '@/hooks';
@@ -32,7 +32,6 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     loading,
     error,
     refreshData,
-    revalidateDate,
     clearError,
   } = useDateLogAPI();
 
@@ -51,13 +50,9 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
   const [deleteDateConfirm, setDeleteDateConfirm] = useState(false);
   const [showMap, setShowMap] = useState(false);
 
-  // Revalidate date data from backend when dateId changes
-  useEffect(() => {
-    if (dateId && revalidateDate) {
-      revalidateDate(dateId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateId]); // Only depend on dateId to prevent infinite loop
+  // Note: Removed revalidateDate call to prevent duplicate API calls
+  // MainView already loads month data, so DateDetailView can use cached data via getDateLog
+  // If explicit revalidation is needed, it should be triggered manually (e.g., refresh button)
 
   // Get date log data (must be called before any conditional returns)
   const dateLog = dateId ? getDateLog(dateId) : undefined;
