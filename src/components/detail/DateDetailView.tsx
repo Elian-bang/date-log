@@ -56,7 +56,8 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     if (dateId && revalidateDate) {
       revalidateDate(dateId);
     }
-  }, [dateId, revalidateDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateId]); // Only depend on dateId to prevent infinite loop
 
   // Get date log data (must be called before any conditional returns)
   const dateLog = dateId ? getDateLog(dateId) : undefined;
