@@ -16,7 +16,7 @@ import { DateDetailView } from './detail/DateDetailView';
 const MainView = () => {
   const { dateId } = useParams<{ dateId?: string }>();
   const navigate = useNavigate();
-  const { data, loading, addDate, loadMonthData } = useDateLogHybrid();
+  const { data, state, loading, addDate, loadMonthData } = useDateLogHybrid();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedDateForModal, setSelectedDateForModal] = useState<string | undefined>(undefined);
@@ -99,8 +99,11 @@ const MainView = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Loading state
-  if (loading) {
+  // Loading state - Only show full-screen spinner on initial load (empty data)
+  // For subsequent loads (month navigation), show optimistic UI with inline indicator
+  const isInitialLoad = state === 'loading' && Object.keys(data).length === 0;
+
+  if (isInitialLoad) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
@@ -138,6 +141,7 @@ const MainView = () => {
             currentMonth={currentMonth}
             onPreviousMonth={handlePreviousMonth}
             onNextMonth={handleNextMonth}
+            loading={loading}
           />
 
           {/* Calendar Grid */}
