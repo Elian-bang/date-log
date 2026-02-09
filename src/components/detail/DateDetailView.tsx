@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiArrowLeft, FiPlus, FiMap, FiTrash2 } from 'react-icons/fi';
-import { useDateLogAPI } from '@/hooks';
+import { useDateLogHybrid } from '@/hooks';
 import { LoadingSpinner, ErrorMessage } from '@/components/common';
 import { formatDateForDisplay } from '@/utils/dateUtils';
 import { CategoryType, PlaceFormData, Place, Restaurant } from '@/types';
@@ -33,7 +33,8 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
     error,
     refreshData,
     clearError,
-  } = useDateLogAPI();
+    revalidateDate,
+  } = useDateLogHybrid();
 
   const [isPlaceFormOpen, setIsPlaceFormOpen] = useState(false);
   const [currentRegionId, setCurrentRegionId] = useState<string>('');
@@ -50,9 +51,17 @@ export const DateDetailView = ({ onBackToCalendar }: DateDetailViewProps) => {
   const [deleteDateConfirm, setDeleteDateConfirm] = useState(false);
   const [showMap, setShowMap] = useState(false);
 
-  // Note: Removed revalidateDate call to prevent duplicate API calls
-  // MainView already loads month data, so DateDetailView can use cached data via getDateLog
-  // If explicit revalidation is needed, it should be triggered manually (e.g., refresh button)
+  // Auto-load date data when dateId changes or component mounts
+  useEffect(() => {
+    if (!dateId) return;
+
+    const dateLog = getDateLog(dateId);
+
+    // If cached data doesn't exist, trigger revalidation to load from API
+    if (!dateLog) {
+      revalidateDate(dateId);
+    }
+  }, [dateId, getDateLog, revalidateDate]);
 
   // Get date log data (must be called before any conditional returns)
   const dateLog = dateId ? getDateLog(dateId) : undefined;
