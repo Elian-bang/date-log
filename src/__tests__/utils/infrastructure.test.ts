@@ -35,9 +35,9 @@ describe('테스트 인프라 검증', () => {
 
       expect(cafe).toHaveProperty('id');
       expect(cafe).toHaveProperty('name', '스타벅스');
-      expect(cafe).toHaveProperty('latitude');
-      expect(cafe).toHaveProperty('longitude');
-      expect(cafe).toHaveProperty('visitDate');
+      expect(cafe).toHaveProperty('coordinates.lat');
+      expect(cafe).toHaveProperty('coordinates.lng');
+      expect(cafe).toHaveProperty('visited');
     });
 
     it('createMockRestaurant should create valid restaurant object', () => {
@@ -46,8 +46,8 @@ describe('테스트 인프라 검증', () => {
       expect(restaurant).toHaveProperty('id');
       expect(restaurant).toHaveProperty('name', '맛집');
       expect(restaurant).toHaveProperty('type', '한식');
-      expect(restaurant).toHaveProperty('latitude');
-      expect(restaurant).toHaveProperty('longitude');
+      expect(restaurant).toHaveProperty('coordinates.lat');
+      expect(restaurant).toHaveProperty('coordinates.lng');
     });
 
     it('createMockSpot should create valid spot object', () => {
@@ -55,8 +55,8 @@ describe('테스트 인프라 검증', () => {
 
       expect(spot).toHaveProperty('id');
       expect(spot).toHaveProperty('name', '공원');
-      expect(spot).toHaveProperty('latitude');
-      expect(spot).toHaveProperty('longitude');
+      expect(spot).toHaveProperty('coordinates.lat');
+      expect(spot).toHaveProperty('coordinates.lng');
     });
 
     it('createMockRegion should create valid region object', () => {

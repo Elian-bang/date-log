@@ -173,7 +173,8 @@ describe('DateLogAdapter', () => {
       const frontendCafe = {
         id: 'cafe-1',
         name: '카페 테스트',
-        memo: '분위기 좋음',
+        boyfriendMemo: '남자친구 메모',
+        girlfriendMemo: '여자친구 메모',
         image: undefined,
         link: 'https://map.kakao.com',
         visited: true,
@@ -184,7 +185,8 @@ describe('DateLogAdapter', () => {
 
       expect(result).toEqual({
         name: '카페 테스트',
-        memo: '분위기 좋음',
+        boyfriendMemo: '남자친구 메모',
+        girlfriendMemo: '여자친구 메모',
         image: undefined,
         link: 'https://map.kakao.com',
         visited: true,
