@@ -52,18 +52,32 @@ const parseKakaoMapUrl = (url: string): Coordinates | null => {
  */
 const parseNaverMapUrl = (url: string): Coordinates | null => {
   try {
-    // Pattern 1: ?c= parameter format (lng,lat,zoom,...)
-    const cParamMatch = url.match(/[?&]c=([0-9.]+),([0-9.]+)/);
-    if (cParamMatch) {
-      return {
-        lng: parseFloat(cParamMatch[1]),
-        lat: parseFloat(cParamMatch[2]),
-      };
+    // Pattern 1: ?c= parameter format (lng,lat,zoom,...) — old /v5/ format only
+    // New /p/ format uses c= for zoom level (e.g. c=14.58,0,0,0,dh), NOT coordinates
+    if (!url.includes('/p/')) {
+      const cParamMatch = url.match(/[?&]c=([0-9.]+),([0-9.]+)/);
+      if (cParamMatch) {
+        const lng = parseFloat(cParamMatch[1]);
+        const lat = parseFloat(cParamMatch[2]);
+        // Validate that values look like Korea coordinates
+        if (lat > 30 && lat < 45 && lng > 120 && lng < 135) {
+          return { lng, lat };
+        }
+      }
     }
 
-    // Pattern 2: URL hash format #/entry/place/
-    // Note: This doesn't contain coordinates, would need API call
-    // For now, return null
+    // Pattern 2: @lat,lng in URL path (some Naver Map URL formats)
+    const atMatch = url.match(/@([0-9.]+),([0-9.]+)/);
+    if (atMatch) {
+      const lat = parseFloat(atMatch[1]);
+      const lng = parseFloat(atMatch[2]);
+      if (lat > 30 && lat < 45 && lng > 120 && lng < 135) {
+        return { lat, lng };
+      }
+    }
+
+    // Pattern 3: /p/ format with place ID — coordinates not in URL
+    // Would need API call to resolve, return null
     return null;
   } catch (error) {
     logger.error('Error parsing Naver Map URL:', error);
